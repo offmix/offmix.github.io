@@ -87,7 +87,12 @@ function geoSwitchTab(btn, tabId) {
 /* ── 背景変更 ── */
 function changeBg(url) {
   document.body.style.backgroundImage = "url('" + url + "')";
+  localStorage.setItem('untraceable_bg', url);
   document.getElementById('bgMenu').classList.remove('open');
+}
+function restoreBg() {
+  var saved = localStorage.getItem('untraceable_bg');
+  if (saved) document.body.style.backgroundImage = "url('" + saved + "')";
 }
 
 /* ── タブ名・ファビコン偽装 ── */
@@ -242,13 +247,89 @@ function loadUrl(url) { loadUrlToTab(activeTabId, url); }
 function saveTabSession() {
   localStorage.setItem('untraceable_tabs', JSON.stringify(tabs.map(function (t) { return { url: t.url }; })));
 }
+
+/* ── タブ復元確認ポップアップ ── */
+function showRestorePopup(data, onRestore, onDiscard) {
+  var pop = document.createElement('div');
+  pop.id = 'restorePopup';
+  pop.style.cssText = [
+    'position:fixed','bottom:60px','right:18px','z-index:999998',
+    'background:rgba(20,20,20,0.97)','border:1px solid #555',
+    'border-radius:10px','padding:12px 16px','color:#ddd',
+    'font-size:12px','font-family:Ubuntu,sans-serif','min-width:220px',
+    'box-shadow:0 4px 20px rgba(0,0,0,0.7)','animation:bootIn 0.25s ease'
+  ].join(';');
+  var urls = data.filter(function(d){ return d.url; });
+  var preview = urls.slice(0,2).map(function(d){
+    try { return new URL(d.url).hostname; } catch(e){ return d.url; }
+  }).join(', ') + (urls.length > 2 ? ' 他' + (urls.length-2) + '件' : '');
+  pop.innerHTML =
+    '<div style="font-weight:500;margin-bottom:6px;color:#fff;">📂 前回のタブを復元？</div>' +
+    '<div style="color:#999;margin-bottom:10px;font-size:11px;">' + (preview || '空のタブ') + '</div>' +
+    '<div style="display:flex;gap:6px;">' +
+      '<button id="restoreYes" style="flex:1;padding:6px;border-radius:6px;border:none;background:#1a5c34;color:#fff;cursor:pointer;font-size:12px;">復元する</button>' +
+      '<button id="restoreNo"  style="flex:1;padding:6px;border-radius:6px;border:1px solid #555;background:transparent;color:#aaa;cursor:pointer;font-size:12px;">破棄</button>' +
+    '</div>';
+  document.body.appendChild(pop);
+  function close(fn) {
+    pop.style.transition = 'opacity 0.2s'; pop.style.opacity = '0';
+    setTimeout(function(){ pop.remove(); fn(); }, 200);
+  }
+  document.getElementById('restoreYes').onclick = function(){ close(onRestore); };
+  document.getElementById('restoreNo' ).onclick = function(){ close(onDiscard); };
+  /* 10秒で自動破棄 */
+  setTimeout(function(){ if(pop.parentNode){ close(onDiscard); } }, 10000);
+}
+
 function restoreTabSession() {
   try {
     var data = JSON.parse(localStorage.getItem('untraceable_tabs') || '[]');
-    if (!data.length) return false;
-    data.forEach(function (d) { createTab(d.url || ''); });
+    var valid = data.filter(function(d){ return d.url; });
+    if (!valid.length) return false;
+    /* まず空タブを1つ作ってブラウザを使える状態にしておく */
+    createTab();
+    showRestorePopup(data,
+      function(){ /* 復元: 空タブを閉じてから復元 */
+        if (tabs.length === 1 && !tabs[0].url) closeTab(tabs[0].id);
+        data.forEach(function(d){ createTab(d.url || ''); });
+      },
+      function(){ /* 破棄: 空タブはそのまま残す */
+        localStorage.removeItem('untraceable_tabs');
+      }
+    );
     return true;
   } catch (e) { return false; }
+}
+
+/* ── 初回ウェルカム ── */
+var WELCOME_VERSION = 'v1.6.0'; /* このバージョンで初回なら表示 */
+function maybeShowWelcome() {
+  var seen = localStorage.getItem('untraceable_welcome');
+  if (seen === WELCOME_VERSION) return;
+  localStorage.setItem('untraceable_welcome', WELCOME_VERSION);
+  var pop = document.createElement('div');
+  pop.id = 'welcomePopup';
+  pop.style.cssText = [
+    'position:fixed','top:50%','left:50%','transform:translate(-50%,-50%)',
+    'z-index:999997','background:rgba(15,15,15,0.98)','border:1px solid #555',
+    'border-radius:14px','padding:28px 32px','color:#ddd','max-width:400px','width:90%',
+    'font-family:Ubuntu,sans-serif','box-shadow:0 8px 40px rgba(0,0,0,0.8)',
+    'animation:bootIn 0.3s ease','text-align:center'
+  ].join(';');
+  pop.innerHTML =
+    '<div style="font-size:28px;margin-bottom:10px;">🚀</div>' +
+    '<div style="font-size:18px;font-weight:600;color:#fff;margin-bottom:8px;">アップデート ' + WELCOME_VERSION + '</div>' +
+    '<div style="font-size:13px;color:#aaa;line-height:1.7;margin-bottom:18px;text-align:left;">' +
+      '✅ 背景を自動保存・復元<br>' +
+      '✅ タブ復元を確認ポップアップで選択式に変更（プライバシー向上）<br>' +
+      '✅ 初回アクセス時にこの画面を表示' +
+    '</div>' +
+    '<button id="welcomeClose" style="padding:8px 28px;border-radius:8px;border:none;background:#1a5c34;color:#fff;cursor:pointer;font-size:13px;">OK、はじめる！</button>';
+  document.body.appendChild(pop);
+  document.getElementById('welcomeClose').onclick = function(){
+    pop.style.transition = 'opacity 0.25s'; pop.style.opacity = '0';
+    setTimeout(function(){ pop.remove(); }, 250);
+  };
 }
 
 /* ── ブックマーク ── */
@@ -385,7 +466,10 @@ function initMemoDrag() {
 document.addEventListener('DOMContentLoaded', function () {
 
   runBootAnimation();
+  restoreBg();
+  maybeShowWelcome();
 
+  /* タブ復元: 保存データがなければ即座に空タブを作成 */
   if (!restoreTabSession()) createTab();
   renderFavs();
 
