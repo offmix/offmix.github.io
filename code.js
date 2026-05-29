@@ -84,6 +84,21 @@ function geoSwitchTab(btn, tabId) {
   document.getElementById(tabId).classList.add('geo-active');
 }
 
+/* ── 全画面 ── */
+function toggleFullscreen() {
+  var btn = document.getElementById('fullscreenBtn');
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen().catch(function(){});
+  } else {
+    document.exitFullscreen().catch(function(){});
+  }
+  document.getElementById('toolPopup').classList.remove('open');
+}
+document.addEventListener('fullscreenchange', function() {
+  var btn = document.getElementById('fullscreenBtn');
+  if (btn) btn.textContent = document.fullscreenElement ? '✕ 全画面解除' : '⛶ 全画面表示';
+});
+
 /* ── 背景変更 ── */
 function changeBg(url) {
   document.body.style.backgroundImage = "url('" + url + "')";
