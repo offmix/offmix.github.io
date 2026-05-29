@@ -298,35 +298,176 @@ function restoreTabSession() {
   } catch(e) { return false; }
 }
 
-/* ── 初回ウェルカム ── */
-var WELCOME_VERSION = 'v1.6.0'; /* このバージョンで初回なら表示 */
-function maybeShowWelcome() {
-  var seen = localStorage.getItem('untraceable_welcome');
-  if (seen === WELCOME_VERSION) return;
-  localStorage.setItem('untraceable_welcome', WELCOME_VERSION);
-  var pop = document.createElement('div');
-  pop.id = 'welcomePopup';
-  pop.style.cssText = [
-    'position:fixed','top:50%','left:50%','transform:translate(-50%,-50%)',
-    'z-index:999997','background:rgba(15,15,15,0.98)','border:1px solid #555',
-    'border-radius:14px','padding:28px 32px','color:#ddd','max-width:400px','width:90%',
-    'font-family:Ubuntu,sans-serif','box-shadow:0 8px 40px rgba(0,0,0,0.8)',
-    'animation:bootIn 0.3s ease','text-align:center'
+/* ══════════════════════════════════════════
+   パスフレーズ認証システム
+   キー: untraceable_pass  値: 平文（ローカルのみ）
+   キー: untraceable_pass_enabled  値: "1"
+   バージョンキー: untraceable_welcome
+══════════════════════════════════════════ */
+var WELCOME_VERSION = 'v1.7.0';
+
+/* 共通オーバーレイ背景を生成 */
+function makeOverlay(zIndex) {
+  var ov = document.createElement('div');
+  ov.style.cssText = [
+    'position:fixed','inset:0','z-index:' + zIndex,
+    'background:rgba(0,0,0,0.72)','backdrop-filter:blur(6px)',
+    'display:flex','align-items:center','justify-content:center',
+    'animation:bootIn 0.2s ease'
   ].join(';');
-  pop.innerHTML =
-    '<div style="font-size:28px;margin-bottom:10px;">🚀</div>' +
-    '<div style="font-size:18px;font-weight:600;color:#fff;margin-bottom:8px;">アップデート ' + WELCOME_VERSION + '</div>' +
-    '<div style="font-size:13px;color:#aaa;line-height:1.7;margin-bottom:18px;text-align:left;">' +
-      '✅ 背景を自動保存・復元<br>' +
-      '✅ タブ復元を確認ポップアップで選択式に変更（プライバシー向上）<br>' +
-      '✅ 初回アクセス時にこの画面を表示' +
-    '</div>' +
-    '<button id="welcomeClose" style="padding:8px 28px;border-radius:8px;border:none;background:#1a5c34;color:#fff;cursor:pointer;font-size:13px;">OK、はじめる！</button>';
-  document.body.appendChild(pop);
-  document.getElementById('welcomeClose').onclick = function(){
-    pop.style.transition = 'opacity 0.25s'; pop.style.opacity = '0';
-    setTimeout(function(){ pop.remove(); }, 250);
+  return ov;
+}
+
+/* 共通カード */
+function makeCard() {
+  var card = document.createElement('div');
+  card.style.cssText = [
+    'background:#141414','border:1px solid #484848',
+    'border-radius:14px','padding:28px 28px 24px',
+    'width:320px','font-family:Ubuntu,sans-serif','color:#ddd',
+    'box-shadow:0 8px 40px rgba(0,0,0,0.8)'
+  ].join(';');
+  return card;
+}
+
+/* パスワード入力行（●表示 + 👁トグル） */
+function makePassRow(placeholder) {
+  var wrap = document.createElement('div');
+  wrap.style.cssText = 'position:relative;margin-bottom:12px;';
+  var inp = document.createElement('input');
+  inp.type = 'password';
+  inp.placeholder = placeholder;
+  inp.style.cssText = [
+    'width:100%','box-sizing:border-box',
+    'height:38px','padding:0 38px 0 12px',
+    'border-radius:7px','border:1px solid #555',
+    'background:#222','color:#fff','font-size:14px',
+    'font-family:Ubuntu,sans-serif','outline:none'
+  ].join(';');
+  var eye = document.createElement('button');
+  eye.type = 'button';
+  eye.textContent = '👁';
+  eye.style.cssText = [
+    'position:absolute','right:6px','top:50%','transform:translateY(-50%)',
+    'background:none','border:none','cursor:pointer','font-size:15px',
+    'color:#888','padding:2px 4px','line-height:1'
+  ].join(';');
+  eye.onclick = function() {
+    inp.type = inp.type === 'password' ? 'text' : 'password';
+    eye.style.opacity = inp.type === 'text' ? '1' : '0.5';
   };
+  eye.style.opacity = '0.5';
+  wrap.appendChild(inp);
+  wrap.appendChild(eye);
+  return { wrap: wrap, inp: inp };
+}
+
+/* ── 初回: パスフレーズ登録案内 ── */
+function maybeShowWelcome(callback) {
+  var seen = localStorage.getItem('untraceable_welcome');
+  if (seen === WELCOME_VERSION) { callback(); return; }
+  localStorage.setItem('untraceable_welcome', WELCOME_VERSION);
+
+  var ov   = makeOverlay(999990);
+  var card = makeCard();
+
+  card.innerHTML =
+    '<div style="font-size:22px;font-weight:600;color:#fff;margin-bottom:6px;">🔐 パスフレーズを設定しますか？</div>' +
+    '<div style="font-size:12px;color:#888;margin-bottom:20px;line-height:1.6;">' +
+      '設定すると次回以降、このブラウザを開くたびに<br>パスフレーズの入力が必要になります。' +
+    '</div>' +
+    '<div id="wp-fields"></div>' +
+    '<div style="display:flex;gap:8px;margin-top:4px;">' +
+      '<button id="wp-yes" style="flex:1;height:36px;border-radius:7px;border:none;background:#1a5c34;color:#fff;cursor:pointer;font-size:13px;font-family:Ubuntu,sans-serif;">設定する</button>' +
+      '<button id="wp-no"  style="flex:1;height:36px;border-radius:7px;border:1px solid #555;background:transparent;color:#aaa;cursor:pointer;font-size:13px;font-family:Ubuntu,sans-serif;">設定しない</button>' +
+    '</div>' +
+    '<div id="wp-err" style="margin-top:10px;font-size:12px;color:#f66;min-height:16px;text-align:center;"></div>';
+
+  ov.appendChild(card);
+  document.body.appendChild(ov);
+
+  var fieldsWrap = card.querySelector('#wp-fields');
+  var r1 = makePassRow('パスフレーズを入力');
+  var r2 = makePassRow('もう一度入力（確認）');
+  fieldsWrap.appendChild(r1.wrap);
+  fieldsWrap.appendChild(r2.wrap);
+  r1.inp.focus();
+
+  var err = card.querySelector('#wp-err');
+
+  function closeOv(fn) {
+    ov.style.transition = 'opacity 0.2s'; ov.style.opacity = '0';
+    setTimeout(function(){ ov.remove(); fn(); }, 200);
+  }
+
+  card.querySelector('#wp-yes').onclick = function() {
+    var v1 = r1.inp.value, v2 = r2.inp.value;
+    if (!v1) { err.textContent = 'パスフレーズを入力してください。'; return; }
+    if (v1 !== v2) { err.textContent = '入力が一致しません。'; r2.inp.value = ''; r2.inp.focus(); return; }
+    localStorage.setItem('untraceable_pass', v1);
+    localStorage.setItem('untraceable_pass_enabled', '1');
+    closeOv(callback);
+  };
+  card.querySelector('#wp-no').onclick = function() {
+    localStorage.removeItem('untraceable_pass');
+    localStorage.removeItem('untraceable_pass_enabled');
+    closeOv(callback);
+  };
+
+  /* Enter キーで確定 */
+  [r1.inp, r2.inp].forEach(function(inp) {
+    inp.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') card.querySelector('#wp-yes').click();
+    });
+  });
+}
+
+/* ── 毎回起動: パスフレーズ入力ロック画面 ── */
+function maybeShowLock(callback) {
+  if (localStorage.getItem('untraceable_pass_enabled') !== '1') { callback(); return; }
+
+  var ov   = makeOverlay(999995);
+  var card = makeCard();
+
+  card.innerHTML =
+    '<div style="font-size:20px;font-weight:600;color:#fff;margin-bottom:6px;">🔒 ロック中</div>' +
+    '<div style="font-size:12px;color:#888;margin-bottom:18px;">パスフレーズを入力してください</div>' +
+    '<div id="lk-field"></div>' +
+    '<button id="lk-ok" style="width:100%;height:36px;border-radius:7px;border:none;background:#1a5c34;color:#fff;cursor:pointer;font-size:13px;font-family:Ubuntu,sans-serif;margin-top:4px;">開く</button>' +
+    '<div id="lk-err" style="margin-top:10px;font-size:12px;color:#f66;min-height:16px;text-align:center;"></div>';
+
+  ov.appendChild(card);
+  document.body.appendChild(ov);
+
+  var fieldWrap = card.querySelector('#lk-field');
+  var r = makePassRow('パスフレーズ');
+  fieldWrap.appendChild(r.wrap);
+  r.inp.focus();
+
+  var err = card.querySelector('#lk-err');
+  var tries = 0;
+
+  function tryUnlock() {
+    var val = r.inp.value;
+    var stored = localStorage.getItem('untraceable_pass') || '';
+    if (val === stored) {
+      ov.style.transition = 'opacity 0.25s'; ov.style.opacity = '0';
+      setTimeout(function(){ ov.remove(); callback(); }, 250);
+    } else {
+      tries++;
+      r.inp.value = '';
+      err.textContent = '❌ パスフレーズが違います。' + (tries >= 3 ? '（' + tries + '回目）' : '');
+      r.inp.focus();
+      card.style.animation = 'none';
+      card.style.transform = 'translateX(8px)';
+      setTimeout(function(){ card.style.transform = ''; }, 80);
+    }
+  }
+
+  card.querySelector('#lk-ok').onclick = tryUnlock;
+  r.inp.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') tryUnlock();
+  });
 }
 
 /* ── ブックマーク ── */
