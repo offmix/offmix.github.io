@@ -130,6 +130,16 @@ function createTab(url) {
   iframe.addEventListener('load', function () {
     hideLoading(id);
     var tab = tabs.find(function (t) { return t.id === id; });
+    /* ── 現在URLをアドレスバーに反映 ── */
+    try {
+      var currentUrl = iframe.contentWindow.location.href;
+      if (currentUrl && currentUrl !== 'about:blank') {
+        tab.url = currentUrl;
+        if (id === activeTabId) document.getElementById('urlInput').value = currentUrl;
+        tab.tabEl.querySelector('.tab-title').textContent = getSiteName(currentUrl);
+        saveTabSession();
+      }
+    } catch(e) {}
     if (tab && tab.url) {
       try {
         var fu = 'https://www.google.com/s2/favicons?sz=32&domain=' + new URL(tab.url).hostname;
@@ -283,8 +293,9 @@ function restoreTabSession() {
 
     document.getElementById('restoreOK').onclick = function() {
       dismiss(function() {
-        /* 空タブを閉じてから保存済みタブを開く */
-        if (tabs.length === 1 && !tabs[0].url) closeTab(tabs[0].id);
+        /* 全タブを閉じてから復元 */
+        tabs.slice().forEach(function(t){ t.frameEl.remove(); t.tabEl.remove(); });
+        tabs = [];
         valid.forEach(function(d){ createTab(d.url); });
       });
     };
@@ -470,6 +481,53 @@ function maybeShowLock(callback) {
   });
 }
 
+/* ── タブ離脱時の再ロック ── */
+function initVisibilityLock() {
+  if (localStorage.getItem('untraceable_pass_enabled') !== '1') return;
+  var hidden = false;
+  document.addEventListener('visibilitychange', function () {
+    if (document.hidden) {
+      hidden = true;
+    } else {
+      if (!hidden) return;
+      hidden = false;
+      /* 既にロック画面が出ていれば二重表示しない */
+      if (document.getElementById('visLockOv')) return;
+      var ov   = makeOverlay(999996);
+      ov.id    = 'visLockOv';
+      var card = makeCard();
+      card.innerHTML =
+        '<div style="font-size:20px;font-weight:600;color:#fff;margin-bottom:6px;">🔒 ロック中</div>' +
+        '<div style="font-size:12px;color:#888;margin-bottom:18px;">パスフレーズを入力してください</div>' +
+        '<div id="vlk-field"></div>' +
+        '<button id="vlk-ok" style="width:100%;height:36px;border-radius:7px;border:none;background:#1a5c34;color:#fff;cursor:pointer;font-size:13px;font-family:Ubuntu,sans-serif;margin-top:4px;">開く</button>' +
+        '<div id="vlk-err" style="margin-top:10px;font-size:12px;color:#f66;min-height:16px;text-align:center;"></div>';
+      ov.appendChild(card);
+      document.body.appendChild(ov);
+      var r = makePassRow('パスフレーズ');
+      card.querySelector('#vlk-field').appendChild(r.wrap);
+      r.inp.focus();
+      var tries = 0;
+      function tryUnlock() {
+        if (r.inp.value === (localStorage.getItem('untraceable_pass') || '')) {
+          ov.style.transition = 'opacity 0.2s'; ov.style.opacity = '0';
+          setTimeout(function(){ ov.remove(); }, 200);
+        } else {
+          tries++;
+          r.inp.value = '';
+          card.querySelector('#vlk-err').textContent =
+            '❌ パスフレーズが違います。' + (tries >= 3 ? '（' + tries + '回目）' : '');
+          r.inp.focus();
+          card.style.transform = 'translateX(8px)';
+          setTimeout(function(){ card.style.transform = ''; }, 80);
+        }
+      }
+      card.querySelector('#vlk-ok').onclick = tryUnlock;
+      r.inp.addEventListener('keydown', function(e){ if(e.key==='Enter') tryUnlock(); });
+    }
+  });
+}
+
 /* ── ブックマーク ── */
 var favs = JSON.parse(localStorage.getItem('favs') || '[{"name":"Wiki","url":"https://ja.wikipedia.org","favicon":""}]');
 
@@ -561,6 +619,23 @@ function runBootAnimation() {
   }, 2600);
 }
 
+/* ── アドレスバー常時反映ポーリング ── */
+function startUrlPolling() {
+  setInterval(function() {
+    var tab = tabs.find(function(t){ return t.id === activeTabId; });
+    if (!tab || !tab.frameEl) return;
+    try {
+      var loc = tab.frameEl.contentWindow.location.href;
+      if (loc && loc !== 'about:blank' && loc !== tab.url) {
+        tab.url = loc;
+        document.getElementById('urlInput').value = loc;
+        tab.tabEl.querySelector('.tab-title').textContent = getSiteName(loc);
+        saveTabSession();
+      }
+    } catch(e) {}
+  }, 500);
+}
+
 /* ── FPS + RAM ── */
 function runFpsMonitor() {
   var times = [], fpsEl = document.getElementById('fpsDisplay');
@@ -605,6 +680,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
   runBootAnimation();
   restoreBg();
+  initVisibilityLock();
 
   /* ロック確認 → (初回のみパスフレーズ登録案内) → 残りの初期化 */
   maybeShowLock(function() {
@@ -741,6 +817,7 @@ document.addEventListener('DOMContentLoaded', function () {
     document.getElementById('toolPopup').classList.remove('open');
   });
 
+  startUrlPolling();
   runFpsMonitor();
   resetIdleTimer();
 });
