@@ -249,56 +249,53 @@ function saveTabSession() {
 }
 
 /* ── タブ復元確認ポップアップ ── */
-function showRestorePopup(data, onRestore, onDiscard) {
-  var pop = document.createElement('div');
-  pop.id = 'restorePopup';
-  pop.style.cssText = [
-    'position:fixed','bottom:60px','right:18px','z-index:999998',
-    'background:rgba(20,20,20,0.97)','border:1px solid #555',
-    'border-radius:10px','padding:12px 16px','color:#ddd',
-    'font-size:12px','font-family:Ubuntu,sans-serif','min-width:220px',
-    'box-shadow:0 4px 20px rgba(0,0,0,0.7)','animation:bootIn 0.25s ease'
-  ].join(';');
-  var urls = data.filter(function(d){ return d.url; });
-  var preview = urls.slice(0,2).map(function(d){
-    try { return new URL(d.url).hostname; } catch(e){ return d.url; }
-  }).join(', ') + (urls.length > 2 ? ' 他' + (urls.length-2) + '件' : '');
-  pop.innerHTML =
-    '<div style="font-weight:500;margin-bottom:6px;color:#fff;">📂 前回のタブを復元？</div>' +
-    '<div style="color:#999;margin-bottom:10px;font-size:11px;">' + (preview || '空のタブ') + '</div>' +
-    '<div style="display:flex;gap:6px;">' +
-      '<button id="restoreYes" style="flex:1;padding:6px;border-radius:6px;border:none;background:#1a5c34;color:#fff;cursor:pointer;font-size:12px;">復元する</button>' +
-      '<button id="restoreNo"  style="flex:1;padding:6px;border-radius:6px;border:1px solid #555;background:transparent;color:#aaa;cursor:pointer;font-size:12px;">破棄</button>' +
-    '</div>';
-  document.body.appendChild(pop);
-  function close(fn) {
-    pop.style.transition = 'opacity 0.2s'; pop.style.opacity = '0';
-    setTimeout(function(){ pop.remove(); fn(); }, 200);
-  }
-  document.getElementById('restoreYes').onclick = function(){ close(onRestore); };
-  document.getElementById('restoreNo' ).onclick = function(){ close(onDiscard); };
-  /* 10秒で自動破棄 */
-  setTimeout(function(){ if(pop.parentNode){ close(onDiscard); } }, 10000);
-}
-
 function restoreTabSession() {
   try {
     var data = JSON.parse(localStorage.getItem('untraceable_tabs') || '[]');
     var valid = data.filter(function(d){ return d.url; });
     if (!valid.length) return false;
-    /* まず空タブを1つ作ってブラウザを使える状態にしておく */
+
+    /* 空タブを1枚用意してすぐ使える状態にする */
     createTab();
-    showRestorePopup(data,
-      function(){ /* 復元: 空タブを閉じてから復元 */
+
+    var pop = document.createElement('div');
+    pop.style.cssText = [
+      'position:fixed','bottom:56px','right:16px','z-index:999998',
+      'background:#1a1a1a','border:1px solid #484848',
+      'border-radius:10px','padding:14px 16px',
+      'font-family:Ubuntu,sans-serif','font-size:13px','color:#ddd',
+      'box-shadow:0 4px 24px rgba(0,0,0,0.75)',
+      'animation:bootIn 0.2s ease'
+    ].join(';');
+    pop.innerHTML =
+      '<div style="color:#fff;font-size:13px;margin-bottom:12px;">タブを復元しますか？</div>' +
+      '<div style="display:flex;gap:8px;">' +
+        '<button id="restoreOK" style="flex:1;height:30px;border-radius:6px;border:none;background:#1a5c34;color:#fff;cursor:pointer;font-size:13px;font-family:Ubuntu,sans-serif;">OK</button>' +
+        '<button id="restoreNO" style="flex:1;height:30px;border-radius:6px;border:1px solid #555;background:transparent;color:#aaa;cursor:pointer;font-size:13px;font-family:Ubuntu,sans-serif;">NO</button>' +
+      '</div>';
+    document.body.appendChild(pop);
+
+    function dismiss(fn) {
+      pop.style.transition = 'opacity 0.15s';
+      pop.style.opacity = '0';
+      setTimeout(function(){ pop.remove(); fn(); }, 150);
+    }
+
+    document.getElementById('restoreOK').onclick = function() {
+      dismiss(function() {
+        /* 空タブを閉じてから保存済みタブを開く */
         if (tabs.length === 1 && !tabs[0].url) closeTab(tabs[0].id);
-        data.forEach(function(d){ createTab(d.url || ''); });
-      },
-      function(){ /* 破棄: 空タブはそのまま残す */
+        valid.forEach(function(d){ createTab(d.url); });
+      });
+    };
+    document.getElementById('restoreNO').onclick = function() {
+      dismiss(function() {
         localStorage.removeItem('untraceable_tabs');
-      }
-    );
+      });
+    };
+
     return true;
-  } catch (e) { return false; }
+  } catch(e) { return false; }
 }
 
 /* ── 初回ウェルカム ── */
