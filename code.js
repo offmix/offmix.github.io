@@ -86,17 +86,23 @@ function geoSwitchTab(btn, tabId) {
 
 /* ── 全画面 ── */
 function toggleFullscreen() {
-  var btn = document.getElementById('fullscreenBtn');
-  if (!document.fullscreenElement) {
-    document.documentElement.requestFullscreen().catch(function(){});
+  var el = document.documentElement;
+  var req = el.requestFullscreen || el.webkitRequestFullscreen || el.mozRequestFullScreen || el.msRequestFullscreen;
+  var exit = document.exitFullscreen || document.webkitExitFullscreen || document.mozCancelFullScreen || document.msExitFullscreen;
+  var current = document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement;
+  if (!current) {
+    if (req) req.call(el);
   } else {
-    document.exitFullscreen().catch(function(){});
+    if (exit) exit.call(document);
   }
   document.getElementById('toolPopup').classList.remove('open');
 }
-document.addEventListener('fullscreenchange', function() {
-  var btn = document.getElementById('fullscreenBtn');
-  if (btn) btn.textContent = document.fullscreenElement ? '✕ 全画面解除' : '⛶ 全画面表示';
+['fullscreenchange','webkitfullscreenchange','mozfullscreenchange','MSFullscreenChange'].forEach(function(ev) {
+  document.addEventListener(ev, function() {
+    var btn = document.getElementById('fullscreenBtn');
+    var current = document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement;
+    if (btn) btn.textContent = current ? '✕ 全画面解除' : '⛶ 全画面表示';
+  });
 });
 
 /* ── 背景変更 ── */
@@ -764,6 +770,9 @@ document.addEventListener('DOMContentLoaded', function () {
     document.getElementById('toolPopup').classList.toggle('open');
     document.getElementById('bgMenu').classList.remove('open');
   };
+  document.getElementById('fullscreenBtn').addEventListener('click', function() {
+    toggleFullscreen();
+  });
   document.getElementById('addTabBtn').onclick = function () { createTab(); };
   document.getElementById('screensaver').addEventListener('click', hideScreensaver);
 
