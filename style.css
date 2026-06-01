@@ -213,3 +213,27 @@ body.veil-on{filter:brightness(0.72) saturate(0.6)}
   .geo-content-section{padding:20px 18px}
   #geo-nav{display:none}
 }
+
+/* ── ナビバーアイコンボタン ── */
+.nav-icon { width:26px; height:26px; object-fit:contain; display:block; }
+.icon-btn { display:flex; align-items:center; justify-content:center; padding:0 10px; }
+#panicBtn.icon-btn { padding:0 10px; }
+#filterBtn.icon-btn { padding:0 10px; }
+
+/* ── ロック解除アニメーション ── */
+@keyframes unlockPop {
+  0%   { transform:scale(0.5) rotate(-20deg); opacity:0; }
+  60%  { transform:scale(1.2) rotate(8deg);  opacity:1; }
+  80%  { transform:scale(0.92) rotate(-3deg); }
+  100% { transform:scale(1) rotate(0deg); opacity:1; }
+}
+@keyframes unlockGlow {
+  0%   { box-shadow:0 0 0px rgba(80,255,160,0); }
+  50%  { box-shadow:0 0 24px rgba(80,255,160,0.7); }
+  100% { box-shadow:0 0 0px rgba(80,255,160,0); }
+}
+#lockIconImg { transition:opacity 0.15s; }
+#lockIconImg.unlock-anim {
+  animation:unlockPop 0.55s cubic-bezier(.36,.07,.19,.97) forwards,
+             unlockGlow 0.8s ease forwards;
+}
