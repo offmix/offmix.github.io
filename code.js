@@ -1,3 +1,7 @@
+/* ── アイコン定数 ── */
+var ICON_LOCKED   = 'https://cdn.phototourl.com/free/2026-06-01-939348a6-aaed-44d3-badd-70adb8ba5717.png';
+var ICON_UNLOCKED = 'https://cdn.phototourl.com/free/2026-06-01-d18bd43b-5f1c-4a80-97b8-e444f4c85852.png';
+
 /* ── ユーティリティ ── */
 function pad(n) { return String(n).padStart(2, '0'); }
 
@@ -502,6 +506,90 @@ function maybeShowLock(callback) {
   });
 }
 
+
+/* ── ロック設定トグル ── */
+function refreshLockToggleUI() {
+  var enabled = localStorage.getItem('untraceable_pass_enabled') === '1';
+  var wrap  = document.getElementById('lockToggleWrap');
+  var thumb = document.getElementById('lockToggleThumb');
+  var label = document.getElementById('lockToggleLabel');
+  if (!wrap) return;
+  if (enabled) {
+    wrap.style.background  = '#1a5c34';
+    wrap.style.borderColor = '#2d9e55';
+    thumb.style.left       = '18px';
+    thumb.style.background = '#fff';
+    label.textContent      = '有効';
+    label.style.color      = '#5f5';
+  } else {
+    wrap.style.background  = '#333';
+    wrap.style.borderColor = '#555';
+    thumb.style.left       = '2px';
+    thumb.style.background = '#888';
+    label.textContent      = '無効';
+    label.style.color      = '#888';
+  }
+}
+
+function toggleLockSetting() {
+  var enabled = localStorage.getItem('untraceable_pass_enabled') === '1';
+  if (!enabled) {
+    /* 有効化: パスフレーズ未設定なら登録ポップアップを出す */
+    if (!localStorage.getItem('untraceable_pass')) {
+      showPassSetupPopup(function(set) {
+        if (set) {
+          localStorage.setItem('untraceable_pass_enabled', '1');
+          initVisibilityLock();
+  refreshLockToggleUI();
+        }
+        refreshLockToggleUI();
+      });
+    } else {
+      localStorage.setItem('untraceable_pass_enabled', '1');
+      initVisibilityLock();
+      refreshLockToggleUI();
+    }
+  } else {
+    /* 無効化 */
+    localStorage.removeItem('untraceable_pass_enabled');
+    refreshLockToggleUI();
+  }
+}
+
+function showPassSetupPopup(callback) {
+  var ov   = makeOverlay(999991);
+  var card = makeCard();
+  card.innerHTML =
+    '<div style="font-size:16px;font-weight:600;color:#fff;margin-bottom:14px;">🔐 パスフレーズを設定</div>' +
+    '<div id="sp-fields"></div>' +
+    '<div style="display:flex;gap:8px;margin-top:4px;">' +
+      '<button id="sp-yes" style="flex:1;height:34px;border-radius:7px;border:none;background:#1a5c34;color:#fff;cursor:pointer;font-size:13px;font-family:Ubuntu,sans-serif;">設定する</button>' +
+      '<button id="sp-no"  style="flex:1;height:34px;border-radius:7px;border:1px solid #555;background:transparent;color:#aaa;cursor:pointer;font-size:13px;font-family:Ubuntu,sans-serif;">キャンセル</button>' +
+    '</div>' +
+    '<div id="sp-err" style="margin-top:8px;font-size:12px;color:#f66;min-height:14px;text-align:center;"></div>';
+  ov.appendChild(card);
+  document.body.appendChild(ov);
+  var r1 = makePassRow('パスフレーズ');
+  var r2 = makePassRow('もう一度入力');
+  card.querySelector('#sp-fields').appendChild(r1.wrap);
+  card.querySelector('#sp-fields').appendChild(r2.wrap);
+  r1.inp.focus();
+  var err = card.querySelector('#sp-err');
+  function close(set) {
+    ov.style.transition='opacity 0.15s'; ov.style.opacity='0';
+    setTimeout(function(){ ov.remove(); callback(set); }, 150);
+  }
+  card.querySelector('#sp-yes').onclick = function() {
+    var v1=r1.inp.value, v2=r2.inp.value;
+    if (!v1) { err.textContent='入力してください'; return; }
+    if (v1!==v2) { err.textContent='一致しません'; r2.inp.value=''; r2.inp.focus(); return; }
+    localStorage.setItem('untraceable_pass', v1);
+    close(true);
+  };
+  card.querySelector('#sp-no').onclick = function() { close(false); };
+  [r1.inp,r2.inp].forEach(function(i){ i.addEventListener('keydown',function(e){ if(e.key==='Enter') card.querySelector('#sp-yes').click(); }); });
+}
+
 /* ── タブ離脱時の再ロック ── */
 function initVisibilityLock() {
   if (localStorage.getItem('untraceable_pass_enabled') !== '1') return;
@@ -518,8 +606,11 @@ function initVisibilityLock() {
       ov.id    = 'visLockOv';
       var card = makeCard();
       card.innerHTML =
-        '<div style="font-size:20px;font-weight:600;color:#fff;margin-bottom:6px;">🔒 ロック中</div>' +
-        '<div style="font-size:12px;color:#888;margin-bottom:18px;">パスフレーズを入力してください</div>' +
+        '<div class="vlk-icon-wrap" style="text-align:center;margin-bottom:12px;">' +
+          '<img src="' + ICON_LOCKED + '" style="width:56px;height:56px;object-fit:contain;">' +
+        '</div>' +
+        '<div style="font-size:20px;font-weight:600;color:#fff;margin-bottom:6px;text-align:center;">ロック中</div>' +
+        '<div class="vlk-sub" style="font-size:12px;color:#888;margin-bottom:18px;text-align:center;">パスフレーズを入力してください</div>' +
         '<div id="vlk-field"></div>' +
         '<button id="vlk-ok" style="width:100%;height:36px;border-radius:7px;border:none;background:#1a5c34;color:#fff;cursor:pointer;font-size:13px;font-family:Ubuntu,sans-serif;margin-top:4px;">開く</button>' +
         '<div id="vlk-err" style="margin-top:10px;font-size:12px;color:#f66;min-height:16px;text-align:center;"></div>';
@@ -531,8 +622,20 @@ function initVisibilityLock() {
       var tries = 0;
       function tryUnlock() {
         if (r.inp.value === (localStorage.getItem('untraceable_pass') || '')) {
-          ov.style.transition = 'opacity 0.2s'; ov.style.opacity = '0';
-          setTimeout(function(){ ov.remove(); }, 200);
+          var vIconEl = document.createElement('img');
+          vIconEl.id  = 'lockIconImg';
+          vIconEl.src = ICON_UNLOCKED;
+          vIconEl.style.cssText = 'width:72px;height:72px;object-fit:contain;display:block;margin:0 auto;';
+          card.querySelector('.vlk-icon-wrap').innerHTML = '';
+          card.querySelector('.vlk-icon-wrap').appendChild(vIconEl);
+          setTimeout(function(){ vIconEl.classList.add('unlock-anim'); }, 10);
+          card.querySelector('#vlk-ok').style.display = 'none';
+          card.querySelector('#vlk-field').style.display = 'none';
+          card.querySelector('.vlk-sub').textContent = 'ロック解除！';
+          setTimeout(function(){
+            ov.style.transition = 'opacity 0.35s'; ov.style.opacity = '0';
+            setTimeout(function(){ ov.remove(); }, 350);
+          }, 700);
         } else {
           tries++;
           r.inp.value = '';
