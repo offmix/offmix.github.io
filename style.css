@@ -1,143 +1,318 @@
-/* ════════════════════════════════════
-   Untraceable Browser - style.css
-════════════════════════════════════ */
-
+/* ===== ブラウザ本体 ===== */
 *, body { margin:0; padding:0; box-sizing:border-box; }
-body, .navbar, .tabbar, button, input, select {
-  font-family: "Ubuntu", sans-serif; font-weight: 300;
-}
-body {
-  background-image: url("https://custom-images.strikinglycdn.com/res/hrscywv4p/image/upload/c_limit,fl_lossy,h_9000,w_1200,f_auto,q_auto/8103728/282569_954041.jpeg");
-  background-size: cover; background-position: center; background-attachment: fixed;
-  height: 100vh; display: flex; flex-direction: column; overflow: hidden;
-}
-@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
-.blink { animation: blink 1s infinite; }
+body, .navbar, .tabbar, button, input, select { font-family:"Ubuntu",sans-serif; font-weight:300; }
+body { background-image:url("https://custom-images.strikinglycdn.com/res/hrscywv4p/image/upload/c_limit,fl_lossy,h_9000,w_1200,f_auto,q_auto/8103728/282569_954041.jpeg"); background-size:cover; background-position:center; background-attachment:fixed; height:100vh; display:flex; flex-direction:column; overflow:hidden; }
 
-/* ── ブックマーク ── */
-#favBar { position:fixed; left:0; top:0; width:150px; height:100%; background:rgba(0,0,0,0.8); transform:translateX(-149px); transition:transform 0.3s; z-index:9999; display:flex; flex-direction:column; align-items:center; padding-top:20px; gap:12px; }
-#favBar:hover { transform:translateX(0); }
-.fav-header { color:#aaa; font-size:11px; pointer-events:none; }
-.fav-item { position:relative; color:white; font-size:13px; text-align:center; cursor:pointer; width:130px; padding:8px; border-radius:5px; }
-.fav-item:hover { background:rgba(255,255,255,0.15); }
-.remove-btn { position:absolute; top:-2px; right:5px; color:#ff6666; font-size:13px; font-weight:bold; }
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+.blink{animation:blink 1s infinite}
+
+#favBar{position:fixed;left:0;top:0;width:150px;height:100%;background:rgba(0,0,0,0.8);transform:translateX(-149px);transition:transform 0.3s;z-index:9999;display:flex;flex-direction:column;align-items:center;padding-top:20px;gap:8px;overflow-y:auto}
+#favBar:hover{transform:translateX(0)}
+.fav-header{color:#aaa;font-size:11px;pointer-events:none;flex-shrink:0}
+.fav-item{position:relative;color:white;font-size:12px;text-align:center;cursor:pointer;width:130px;padding:8px 6px 6px;border-radius:5px;display:flex;flex-direction:column;align-items:center;gap:4px;flex-shrink:0;user-select:none}
+.fav-item:hover{background:rgba(255,255,255,0.15)}
+.fav-item.drag-over{background:rgba(90,170,255,0.25);outline:1px dashed #5af}
+.fav-item.dragging{opacity:0.4}
+.fav-favicon{width:24px;height:24px;border-radius:4px;object-fit:cover;background:rgba(255,255,255,0.08)}
+.fav-name{width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.3}
+.remove-btn{position:absolute;top:2px;right:4px;color:#ff6666;font-size:12px;font-weight:bold;line-height:1}
+
+#fpsDisplay{position:fixed;left:4px;bottom:12px;z-index:9998;background:rgba(0,0,0,0.6);color:#0f0;font-size:12px;font-family:'Orbitron',monospace;font-weight:400;padding:3px 10px;border-radius:6px;pointer-events:none;letter-spacing:1px;white-space:nowrap}
+
+.tab-favicon{width:14px;height:14px;border-radius:2px;flex-shrink:0}
+
+/* ── 起動アニメーション ── */
+#bootOverlay{position:fixed;inset:0;z-index:999999;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:'Orbitron',monospace}
+#bootLines{display:flex;flex-direction:column;gap:10px;min-width:360px}
+.boot-line{font-size:14px;color:#0f0;opacity:0;white-space:nowrap}
+.boot-line.show{animation:bootIn 0.3s ease forwards}
+@keyframes bootIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.boot-line .boot-ok{color:#5af;margin-left:10px}
+#bootBar{width:360px;height:3px;background:#111;border-radius:2px;margin-top:20px;overflow:hidden}
+#bootBarFill{height:100%;width:0%;background:linear-gradient(90deg,#0f0,#5af);border-radius:2px;transition:width 0.3s ease}
+
+/* ── ローディング ── */
+#loadingOverlay{position:absolute;inset:0;z-index:200;display:none;flex-direction:column;align-items:center;justify-content:center;background:rgba(10,10,10,0.72);backdrop-filter:blur(4px);pointer-events:none}
+#loadingOverlay.active{display:flex}
+.load-spinner{width:48px;height:48px;border:4px solid rgba(255,255,255,0.15);border-top-color:#5af;border-radius:50%;animation:spin 0.7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.load-label{margin-top:16px;color:rgba(255,255,255,0.7);font-size:13px;letter-spacing:1px}
 
 /* ── タブバー ── */
-.tabbar { display:flex; align-items:center; background:#222; border-bottom:1px solid #444; padding:0 8px; height:32px; z-index:101; flex-shrink:0; overflow-x:auto; }
-.tab { display:flex; align-items:center; gap:5px; height:26px; padding:0 10px 0 12px; background:#2e2e2e; border:1px solid #444; border-bottom:none; border-radius:6px 6px 0 0; color:#aaa; font-size:12px; cursor:pointer; min-width:80px; max-width:160px; margin-right:2px; white-space:nowrap; }
-.tab.active { background:#333; color:#fff; border-color:#555; }
-.tab:hover:not(.active) { background:#3a3a3a; }
-.tab-title { flex:1; overflow:hidden; text-overflow:ellipsis; }
-.tab-close { width:14px; height:14px; border-radius:50%; border:none; background:transparent; color:#777; cursor:pointer; font-size:12px; display:flex; align-items:center; justify-content:center; flex-shrink:0; padding:0; line-height:1; }
-.tab-close:hover { background:rgba(255,80,80,0.3); color:#fff; }
-#addTabBtn { height:26px; padding:0 10px; background:transparent; border:1px solid #444; border-radius:6px; color:#888; cursor:pointer; font-size:16px; display:flex; align-items:center; flex-shrink:0; }
-#addTabBtn:hover { background:#3a3a3a; color:#fff; }
+.tabbar{display:flex;align-items:center;background:#222;border-bottom:1px solid #444;padding:0 10px;height:44px;z-index:101;flex-shrink:0;overflow-x:auto}
+.tab{display:flex;align-items:center;gap:6px;height:36px;padding:0 14px 0 16px;background:#2e2e2e;border:1px solid #444;border-bottom:none;border-radius:8px 8px 0 0;color:#aaa;font-size:14px;cursor:pointer;min-width:100px;max-width:200px;margin-right:3px;white-space:nowrap}
+.tab.active{background:#333;color:#fff;border-color:#555}
+.tab:hover:not(.active){background:#3a3a3a}
+.tab-title{flex:1;overflow:hidden;text-overflow:ellipsis}
+.tab-close{width:18px;height:18px;border-radius:50%;border:none;background:transparent;color:#777;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;padding:0;line-height:1}
+.tab-close:hover{background:rgba(255,80,80,0.3);color:#fff}
+#addTabBtn{height:36px;padding:0 14px;background:transparent;border:1px solid #444;border-radius:8px;color:#888;cursor:pointer;font-size:20px;display:flex;align-items:center;flex-shrink:0}
+#addTabBtn:hover{background:#3a3a3a;color:#fff}
 
 /* ── ナビバー ── */
-.navbar { display:flex; align-items:center; gap:7px; padding:5px 12px; background:#333; border-bottom:1px solid #555; z-index:100; flex-shrink:0; }
-#logoImg { height:34px; width:auto; margin-right:8px; cursor:pointer; border-radius:6px; transition:opacity 0.15s, transform 0.15s; }
-#logoImg:hover { opacity:0.75; transform:scale(0.95); }
-#clock { color:white; font-size:12px; text-align:center; min-width:100px; line-height:1.4; }
-.nbtn { height:30px; padding:0 10px; border-radius:6px; border:1px solid #555; background:#444; color:white; cursor:pointer; font-size:11px; white-space:nowrap; }
-.nbtn:hover { background:#555; }
-#resetButton { background:#800; border-color:#800; }
-#urlInput { flex:1; height:30px; padding:0 10px; border-radius:6px; border:1px solid #555; background:#222; color:#fff; outline:none; font-size:12px; }
-#panicBtn { height:30px; padding:0 10px; border-radius:6px; border:none; background:linear-gradient(135deg,#c0392b,#8e0000); color:white; cursor:pointer; font-size:11px; box-shadow:0 0 8px rgba(200,0,0,0.4); white-space:nowrap; }
-#panicBtn:hover { box-shadow:0 0 16px rgba(255,0,0,0.7); }
-#filterBtn { height:30px; padding:0 10px; border-radius:6px; border:1px solid #555; background:#444; color:white; cursor:pointer; font-size:11px; white-space:nowrap; transition:background 0.2s, box-shadow 0.2s; }
-#filterBtn:hover { background:#555; }
-#filterBtn.on { background:linear-gradient(135deg,#1a6b3a,#0d4025); box-shadow:0 0 10px rgba(0,200,80,0.5); border-color:#2d9e55; }
-#memoToggleBtn { display:flex; align-items:center; justify-content:center; padding:0 8px; }
+.navbar{display:flex;align-items:center;gap:8px;padding:9px 14px;background:#333;border-bottom:1px solid #555;z-index:100;flex-shrink:0}
+#logoImg{height:58px;width:auto;margin-right:8px;cursor:pointer;border-radius:8px;transition:opacity 0.15s,transform 0.15s}
+#logoImg:hover{opacity:0.75;transform:scale(0.95)}
+#clock{color:white;font-size:14px;text-align:center;min-width:115px;line-height:1.5}
+.nbtn{height:38px;padding:0 14px;border-radius:8px;border:1px solid #555;background:#444;color:white;cursor:pointer;font-size:13px;white-space:nowrap}
+.nbtn:hover{background:#555}
+#resetButton{background:#800;border-color:#800}
+#urlInput{flex:1;height:38px;padding:0 14px;border-radius:8px;border:1px solid #555;background:#222;color:#fff;outline:none;font-size:14px}
+#panicBtn{height:38px;padding:0 14px;border-radius:8px;border:none;background:linear-gradient(135deg,#c0392b,#8e0000);color:white;cursor:pointer;font-size:13px;box-shadow:0 0 8px rgba(200,0,0,0.4);white-space:nowrap}
+#panicBtn:hover{box-shadow:0 0 16px rgba(255,0,0,0.7)}
+#filterBtn{height:38px;padding:0 14px;border-radius:8px;border:1px solid #555;background:#444;color:white;cursor:pointer;font-size:13px;white-space:nowrap;transition:background 0.2s,box-shadow 0.2s}
+#filterBtn:hover{background:#555}
+#filterBtn.on{background:linear-gradient(135deg,#1a6b3a,#0d4025);box-shadow:0 0 10px rgba(0,200,80,0.5);border-color:#2d9e55}
 
-/* ── ポップアップメニュー ── */
-#bgMenu { position:fixed; top:78px; right:220px; background:#111; padding:8px; border-radius:10px; display:none; flex-direction:column; gap:3px; z-index:5000; border:1px solid #444; }
-#bgMenu.open { display:flex; }
-.bg-option { color:white; padding:7px 14px; cursor:pointer; border-radius:5px; font-size:13px; }
-.bg-option:hover { background:#333; }
-#toolPopup { position:fixed; top:78px; right:14px; background:#111; padding:16px; border-radius:10px; display:none; border:1px solid #444; z-index:5000; color:white; width:220px; }
-#toolPopup.open { display:block; }
-#gustBtn { width:100%; padding:12px; background:transparent; color:white; border:1px solid #444; font-size:20px; cursor:pointer; border-radius:5px; }
-hr { margin:10px 0; border:0; border-top:1px solid #333; }
+/* ── 背景メニュー ── */
+#bgMenu{position:fixed;top:100px;right:220px;background:#111;padding:8px;border-radius:10px;display:none;flex-direction:column;gap:3px;z-index:5000;border:1px solid #444}
+#bgMenu.open{display:flex}
+.bg-option{color:white;padding:7px 14px;cursor:pointer;border-radius:5px;font-size:13px}
+.bg-option:hover{background:#333}
 
-/* ── コンテンツエリア ── */
-#mainContent { flex:1; position:relative; overflow:hidden; }
-.tab-frame { position:absolute; inset:0; width:100%; height:100%; border:none; display:none; }
-.tab-frame.active { display:block; }
-#messageArea { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; color:#fff; text-align:center; text-shadow:0 2px 4px rgba(0,0,0,0.8); padding:40px 20px; }
+/* ── ツールポップアップ ── */
+#toolPopup{position:fixed;top:100px;right:14px;background:#111;padding:16px;border-radius:10px;display:none;border:1px solid #444;z-index:5000;color:white;width:260px}
+#toolPopup.open{display:block}
+#gustBtn{width:100%;padding:12px;background:transparent;color:white;border:1px solid #444;font-size:20px;cursor:pointer;border-radius:5px}
+hr{margin:10px 0;border:0;border-top:1px solid #333}
 
-/* ── ダミー画面 ── */
-#dummyOverlay { position:fixed; inset:0; z-index:99999; background:#fff; display:none; flex-direction:column; align-items:center; justify-content:flex-start; padding-top:80px; }
-#dummyOverlay.active { display:flex; }
-.dummy-logo { font-size:80px; font-weight:700; letter-spacing:-2px; margin-bottom:30px; user-select:none; }
-.dummy-logo span:nth-child(1){color:#4285F4} .dummy-logo span:nth-child(2){color:#EA4335}
-.dummy-logo span:nth-child(3){color:#FBBC05} .dummy-logo span:nth-child(4){color:#4285F4}
-.dummy-logo span:nth-child(5){color:#34A853} .dummy-logo span:nth-child(6){color:#EA4335}
-.dummy-search-box { display:flex; align-items:center; border:1px solid #dfe1e5; border-radius:24px; padding:12px 20px; width:560px; max-width:90vw; gap:10px; box-shadow:0 1px 6px rgba(32,33,36,.1); }
-.dummy-search-box input { flex:1; border:none; outline:none; font-size:16px; color:#202124; }
-.dummy-search-btn-row { display:flex; gap:12px; margin-top:26px; }
-.dummy-search-btn { padding:9px 22px; background:#f8f9fa; border:1px solid #f8f9fa; border-radius:4px; color:#3c4043; font-size:14px; cursor:pointer; }
-.dummy-hint { margin-top:60px; font-size:12px; color:#aaa; }
+/* ── メインコンテンツ ── */
+#mainContent{flex:1;position:relative;overflow:hidden}
+.tab-frame{position:absolute;inset:0;width:100%;height:100%;border:none;display:none}
+.tab-frame.active{display:block}
+#messageArea{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;color:#fff;text-align:center;text-shadow:0 2px 4px rgba(0,0,0,0.8);padding:40px 20px}
+
+/* ── 覗き見防止ベール ── */
+#darkVeil{position:fixed;inset:0;z-index:77777;pointer-events:none;background-color:rgba(232,216,184,0.5);opacity:0;transition:opacity 0.4s}
+#darkVeil.active{opacity:1}
+body.veil-on{filter:brightness(0.72) saturate(0.6)}
+
+/* ── プライバシーステータス ── */
+#privacyStatus{position:fixed;bottom:12px;right:16px;z-index:500;background:rgba(0,0,0,0.55);color:rgba(255,255,255,0.5);font-size:11px;padding:4px 10px;border-radius:12px;pointer-events:none}
 
 /* ── スクリーンセーバー ── */
-#screensaver { position:fixed; inset:0; z-index:88888; background:rgba(0,0,0,0.92); backdrop-filter:blur(18px); display:none; flex-direction:column; align-items:center; justify-content:center; cursor:pointer; }
-#screensaver.active { display:flex; }
-#ssClock { font-size:100px; color:rgba(255,255,255,0.75); letter-spacing:8px; animation:ssPulse 3s ease-in-out infinite; }
-@keyframes ssPulse { 0%,100%{opacity:0.6} 50%{opacity:0.9} }
-#ssDate { font-size:20px; color:rgba(255,255,255,0.6); margin-top:14px; letter-spacing:4px; }
-#ssHint { position:absolute; bottom:40px; font-size:13px; color:rgba(255,255,255,0.5); letter-spacing:2px; animation:ssPulse 4s ease-in-out infinite; }
-
-/* ── ベール & ステータス ── */
-#darkVeil {
-  position:fixed; inset:0; z-index:77777; pointer-events:none;
-  /* ╔══════════════════════════════════════╗ */
-  /* ║  ベールの色・濃さはここを変更してね  ║ */
-  background: rgba( 0, 0, 0, 0.55 );   /* ← */
-  /* ╚══════════════════════════════════════╝ */
-  opacity:0; transition:opacity 0.4s;
-}
-#darkVeil.active { opacity:1; }
-body.veil-on { filter: brightness(0.72) saturate(0.6); }
-#privacyStatus { position:fixed; bottom:12px; right:16px; z-index:500; background:rgba(0,0,0,0.55); color:rgba(255,255,255,0.5); font-size:11px; padding:4px 10px; border-radius:12px; pointer-events:none; }
-
-/* ── 更新情報オーバーレイ ── */
-#historyOverlay { position:fixed; inset:0; z-index:88000; background:rgba(0,0,0,0.7); display:none; align-items:center; justify-content:center; }
-#historyOverlay.open { display:flex; }
-#historyModal {
-  background:#fff; border-radius:12px; width:820px; max-width:95vw;
-  height:85vh; display:flex; flex-direction:column; overflow:hidden;
-  box-shadow:0 20px 60px rgba(0,0,0,0.5);
-}
-#historyModalHeader {
-  display:flex; align-items:center; justify-content:space-between;
-  padding:14px 20px; background:#f4f4f4; border-bottom:1px solid #ddd; flex-shrink:0;
-}
-#historyModalHeader span { font-size:15px; font-weight:400; color:#333; }
-#historyModalClose { width:28px; height:28px; border-radius:50%; border:none; background:rgba(0,0,0,0.1); color:#555; cursor:pointer; font-size:16px; display:flex; align-items:center; justify-content:center; }
-#historyModalClose:hover { background:rgba(255,80,80,0.2); color:#c00; }
-#historyModalBody { flex:1; overflow:hidden; }
-#historyFrame { width:100%; height:100%; border:none; }
+#screensaver{position:fixed;inset:0;z-index:88888;background:rgba(0,0,0,0.92);backdrop-filter:blur(18px);display:none;flex-direction:column;align-items:center;justify-content:center;cursor:pointer}
+#screensaver.active{display:flex}
+#ssClock{font-size:100px;color:rgba(255,255,255,0.75);letter-spacing:8px;animation:ssPulse 3s ease-in-out infinite}
+@keyframes ssPulse{0%,100%{opacity:0.6}50%{opacity:0.9}}
+#ssDate{font-size:20px;color:rgba(255,255,255,0.6);margin-top:14px;letter-spacing:4px}
+#ssHint{position:absolute;bottom:40px;font-size:13px;color:rgba(255,255,255,0.5);letter-spacing:2px;animation:ssPulse 4s ease-in-out infinite}
 
 /* ── メモパネル ── */
-#memoPanel { position:fixed; bottom:80px; left:18px; z-index:8000; width:380px; background:rgba(18,18,18,0.97); border:1px solid #444; border-radius:12px; box-shadow:0 8px 32px rgba(0,0,0,0.7); display:none; flex-direction:column; overflow:hidden; }
-#memoPanel.open { display:flex; }
-#memoHeader { display:flex; align-items:center; justify-content:space-between; padding:8px 12px; background:rgba(255,255,255,0.05); border-bottom:1px solid #333; cursor:grab; user-select:none; }
-#memoHeader:active { cursor:grabbing; }
-#memoHeaderLeft { display:flex; align-items:center; gap:8px; }
-#memoTitle { color:#ccc; font-size:13px; }
-#memoSaveStatus { font-size:11px; color:#777; }
-#memoCloseBtn { width:22px; height:22px; border-radius:50%; border:none; background:rgba(255,255,255,0.08); color:#aaa; cursor:pointer; font-size:13px; display:flex; align-items:center; justify-content:center; }
-#memoCloseBtn:hover { background:rgba(255,80,80,0.35); color:#fff; }
-#memoToolbar { display:flex; align-items:center; gap:5px; padding:6px 10px; border-bottom:1px solid #2a2a2a; flex-wrap:wrap; }
-#memoToolbar label { color:#888; font-size:11px; }
-.color-swatch { width:17px; height:17px; border-radius:3px; cursor:pointer; border:2px solid transparent; transition:transform 0.15s; flex-shrink:0; }
-.color-swatch:hover { transform:scale(1.25); border-color:#fff; }
-#colorPicker { width:24px; height:24px; border:none; border-radius:4px; cursor:pointer; padding:0; }
-#fontSizeSelect { height:22px; padding:0 4px; border-radius:4px; border:1px solid #444; background:#2a2a2a; color:#ccc; font-size:11px; cursor:pointer; outline:none; }
-#memoBody { min-height:220px; max-height:360px; padding:12px; color:#eee; font-size:14px; line-height:1.7; outline:none; overflow-y:auto; white-space:pre-wrap; word-break:break-word; }
-#memoBody:empty::before { content:"メモを入力..."; color:#444; pointer-events:none; }
-#memoFooter { display:flex; align-items:center; justify-content:space-between; padding:6px 10px; border-top:1px solid #2a2a2a; }
-#memoSaveBtn { padding:5px 14px; background:#1a5c34; border:none; border-radius:5px; color:white; cursor:pointer; font-size:12px; }
-#memoSaveBtn:hover { background:#227a45; }
-#memoClearBtn { padding:5px 10px; background:transparent; border:1px solid #444; border-radius:5px; color:#777; cursor:pointer; font-size:11px; }
-#memoClearBtn:hover { color:#ff6666; border-color:#ff6666; }
-#memoCharCount { font-size:11px; color:#555; }
+#memoToggleBtn{display:flex;align-items:center;justify-content:center;padding:0 8px}
+#memoPanel{position:fixed;bottom:80px;left:18px;z-index:8000;width:380px;background:rgba(18,18,18,0.97);border:1px solid #444;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,0.7);display:none;flex-direction:column;overflow:hidden}
+#memoPanel.open{display:flex}
+#memoHeader{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:rgba(255,255,255,0.05);border-bottom:1px solid #333;cursor:grab;user-select:none}
+#memoHeader:active{cursor:grabbing}
+#memoHeaderLeft{display:flex;align-items:center;gap:8px}
+#memoTitle{color:#ccc;font-size:13px}
+#memoSaveStatus{font-size:11px;color:#777}
+#memoCloseBtn{width:22px;height:22px;border-radius:50%;border:none;background:rgba(255,255,255,0.08);color:#aaa;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center}
+#memoCloseBtn:hover{background:rgba(255,80,80,0.35);color:#fff}
+#memoToolbar{display:flex;align-items:center;gap:5px;padding:6px 10px;border-bottom:1px solid #2a2a2a;flex-wrap:wrap}
+#memoToolbar label{color:#888;font-size:11px}
+.color-swatch{width:17px;height:17px;border-radius:3px;cursor:pointer;border:2px solid transparent;transition:transform 0.15s;flex-shrink:0}
+.color-swatch:hover{transform:scale(1.25);border-color:#fff}
+#colorPicker{width:24px;height:24px;border:none;border-radius:4px;cursor:pointer;padding:0}
+#fontSizeSelect{height:22px;padding:0 4px;border-radius:4px;border:1px solid #444;background:#2a2a2a;color:#ccc;font-size:11px;cursor:pointer;outline:none}
+#memoBody{min-height:220px;max-height:360px;padding:12px;color:#eee;font-size:14px;line-height:1.7;outline:none;overflow-y:auto;white-space:pre-wrap;word-break:break-word}
+#memoBody:empty::before{content:"メモを入力...";color:#444;pointer-events:none}
+#memoFooter{display:flex;align-items:center;justify-content:space-between;padding:6px 10px;border-top:1px solid #2a2a2a}
+#memoSaveBtn{padding:5px 14px;background:#1a5c34;border:none;border-radius:5px;color:white;cursor:pointer;font-size:12px}
+#memoSaveBtn:hover{background:#227a45}
+#memoClearBtn{padding:5px 10px;background:transparent;border:1px solid #444;border-radius:5px;color:#777;cursor:pointer;font-size:11px}
+#memoClearBtn:hover{color:#ff6666;border-color:#ff6666}
+#memoCharCount{font-size:11px;color:#555}
+
+/* ===== 地理ノート偽装オーバーレイ ===== */
+#disguiseOverlay {
+  position:fixed; inset:0; z-index:99999;
+  display:none; overflow-y:auto;
+  background:#f5f0e8;
+  font-family:'Zen Kaku Gothic New',sans-serif;
+  line-height:1.7; color:#2c2416;
+  animation:fadeInG 0.12s ease;
+}
+#disguiseOverlay.active { display:block; }
+@keyframes fadeInG{from{opacity:0}to{opacity:1}}
+
+#disguiseHint {
+  position:fixed; bottom:8px; right:12px; z-index:100000;
+  font-size:10px; color:rgba(0,0,0,0.18); pointer-events:none;
+  font-family:monospace; display:none;
+}
+#disguiseHint.active { display:block; }
+
+/* ── 地理ノート内スタイル ── */
+#geo-header { background:#2c2416; color:#f5f0e8; position:sticky; top:0; z-index:10; box-shadow:0 2px 12px rgba(0,0,0,0.2); }
+.geo-header-inner { max-width:960px; margin:0 auto; padding:14px 24px; display:flex; align-items:center; justify-content:space-between; }
+.geo-logo { font-family:'M PLUS Rounded 1c',sans-serif; font-size:20px; font-weight:700; letter-spacing:0.05em; display:flex; align-items:center; gap:10px; color:#f5f0e8; }
+.geo-logo-badge { background:#c8502a; color:white; font-size:11px; padding:3px 8px; border-radius:4px; font-weight:700; letter-spacing:0.1em; }
+#geo-nav { display:flex; gap:4px; }
+#geo-nav a { color:#ccc; text-decoration:none; font-size:13px; padding:6px 12px; border-radius:6px; transition:all 0.2s; }
+#geo-nav a:hover, #geo-nav a.geo-active { background:rgba(255,255,255,0.15); color:white; }
+.geo-container { max-width:960px; margin:0 auto; padding:32px 24px; }
+.geo-section-title { font-family:'M PLUS Rounded 1c',sans-serif; font-size:22px; font-weight:700; color:#2c2416; margin-bottom:20px; display:flex; align-items:center; gap:12px; }
+.geo-section-title::before { content:''; display:block; width:6px; height:26px; background:#c8502a; border-radius:3px; }
+.geo-section-subtitle { font-size:13px; color:#9b8c7e; font-weight:400; }
+.geo-chapter-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:20px; margin-bottom:40px; }
+.geo-chapter-card { background:#ffffff; border:1.5px solid #d4c8b8; border-radius:14px; overflow:hidden; cursor:pointer; transition:all 0.25s; text-decoration:none; display:block; }
+.geo-chapter-card:hover { transform:translateY(-3px); box-shadow:0 8px 24px rgba(0,0,0,0.12); border-color:#c8502a; }
+.geo-card-header { padding:18px 20px 14px; border-bottom:1px solid #d4c8b8; }
+.geo-card-region { font-size:11px; font-weight:700; letter-spacing:0.12em; color:#9b8c7e; margin-bottom:6px; }
+.geo-card-title { font-family:'M PLUS Rounded 1c',sans-serif; font-size:17px; font-weight:700; color:#2c2416; margin-bottom:4px; }
+.geo-card-sub { font-size:12px; color:#9b8c7e; }
+.geo-card-body { padding:14px 20px 18px; }
+.geo-kw-list { display:flex; flex-wrap:wrap; gap:6px; }
+.geo-kw { font-size:12px; padding:4px 10px; border-radius:20px; font-weight:500; }
+.geo-kw.red { background:#fae8e3; color:#993c1d; }
+.geo-kw.blue { background:#e3eef8; color:#185fa5; }
+.geo-kw.green { background:#e5f3ec; color:#1a6b40; }
+.geo-content-section { background:#ffffff; border:1.5px solid #d4c8b8; border-radius:16px; padding:28px 32px; margin-bottom:28px; }
+.geo-content-section h2 { font-family:'M PLUS Rounded 1c',sans-serif; font-size:18px; font-weight:700; color:#2c2416; margin-bottom:18px; padding-bottom:12px; border-bottom:2px dashed #d4c8b8; }
+.geo-table { width:100%; border-collapse:collapse; font-size:14px; margin-bottom:8px; }
+.geo-table th { background:#ede7d9; padding:10px 14px; text-align:left; font-weight:700; font-size:13px; color:#6b5d4f; border:1px solid #d4c8b8; }
+.geo-table td { padding:10px 14px; border:1px solid #d4c8b8; vertical-align:top; }
+.geo-table tr:nth-child(even) td { background:#faf7f2; }
+.geo-table tr:hover td { background:#f0ebe0; }
+.geo-hl { background:#fff3cd; padding:1px 4px; border-radius:3px; font-weight:500; }
+.geo-point-box { border-left:4px solid #c8502a; background:#fae8e3; padding:12px 16px; border-radius:0 10px 10px 0; margin:14px 0; font-size:14px; }
+.geo-point-box.blue { border-left-color:#3a7abf; background:#e3eef8; }
+.geo-point-box.green { border-left-color:#2e8b57; background:#e5f3ec; }
+.geo-point-label { font-size:11px; font-weight:700; letter-spacing:0.1em; color:#9b8c7e; margin-bottom:4px; }
+.geo-flashcard-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:12px; margin-top:16px; }
+.geo-flashcard { background:#ede7d9; border:1.5px solid #d4c8b8; border-radius:12px; padding:14px 16px; cursor:pointer; transition:all 0.2s; position:relative; min-height:80px; }
+.geo-flashcard:hover { border-color:#3a7abf; }
+.geo-flashcard .geo-q { font-size:13px; font-weight:700; color:#2c2416; margin-bottom:8px; }
+.geo-flashcard .geo-a { font-size:13px; color:#6b5d4f; display:none; padding-top:8px; border-top:1px dashed #d4c8b8; }
+.geo-flashcard.geo-open .geo-a { display:block; }
+.geo-flashcard .geo-tap-hint { font-size:11px; color:#9b8c7e; position:absolute; bottom:10px; right:14px; }
+.geo-flashcard.geo-open .geo-tap-hint { display:none; }
+.geo-map-note { background:linear-gradient(135deg,#e8f4fd 0%,#f0f8e8 100%); border:1.5px solid #b8d4f0; border-radius:14px; padding:20px 24px; margin:16px 0; font-size:14px; }
+.geo-map-note h3 { font-family:'M PLUS Rounded 1c',sans-serif; font-size:15px; font-weight:700; color:#185fa5; margin-bottom:10px; }
+.geo-tab-nav { display:flex; gap:0; margin-bottom:0; border-bottom:2px solid #d4c8b8; overflow-x:auto; }
+.geo-tab-btn { padding:10px 20px; font-size:14px; font-weight:500; color:#6b5d4f; background:transparent; border:none; cursor:pointer; border-bottom:3px solid transparent; margin-bottom:-2px; white-space:nowrap; transition:all 0.2s; font-family:'Zen Kaku Gothic New',sans-serif; }
+.geo-tab-btn:hover { color:#2c2416; }
+.geo-tab-btn.geo-active { color:#c8502a; border-bottom-color:#c8502a; font-weight:700; }
+.geo-tab-content { display:none; padding-top:24px; }
+.geo-tab-content.geo-active { display:block; }
+.geo-page { display:none; }
+.geo-page.geo-active { display:block; }
+.geo-hero { text-align:center; padding:48px 24px 36px; background:#ffffff; border-radius:16px; border:1.5px solid #d4c8b8; margin-bottom:32px; }
+.geo-hero-label { font-size:12px; letter-spacing:0.15em; color:#9b8c7e; font-weight:700; margin-bottom:12px; }
+.geo-hero h1 { font-family:'M PLUS Rounded 1c',sans-serif; font-size:32px; font-weight:700; color:#2c2416; margin-bottom:10px; line-height:1.3; }
+.geo-hero h1 em { color:#c8502a; font-style:normal; }
+.geo-hero p { font-size:15px; color:#6b5d4f; max-width:480px; margin:0 auto 20px; }
+.geo-hero-tags { display:flex; justify-content:center; gap:8px; flex-wrap:wrap; }
+.geo-hero-tag { font-size:12px; padding:5px 14px; border-radius:20px; border:1px solid #d4c8b8; color:#6b5d4f; background:#f5f0e8; }
+#geo-footer { text-align:center; padding:32px 24px; color:#9b8c7e; font-size:13px; border-top:1px solid #d4c8b8; margin-top:20px; }
+
+@media(max-width:640px){
+  .geo-container{padding:20px 16px}
+  .geo-hero h1{font-size:24px}
+  .geo-content-section{padding:20px 18px}
+  #geo-nav{display:none}
+}
+
+/* ── ナビバーアイコンボタン ── */
+.nav-icon { width:16px; height:16px; object-fit:contain; display:block; }
+.icon-btn { display:flex; align-items:center; justify-content:center; padding:0 10px; min-width:0; }
+#panicBtn.icon-btn { padding:0 10px; }
+#filterBtn.icon-btn { padding:0 10px; }
+
+/* ── ロック解除アニメーション ── */
+@keyframes unlockPop {
+  0%   { transform:scale(0.5) rotate(-20deg); opacity:0; }
+  60%  { transform:scale(1.2) rotate(8deg);  opacity:1; }
+  80%  { transform:scale(0.92) rotate(-3deg); }
+  100% { transform:scale(1) rotate(0deg); opacity:1; }
+}
+@keyframes unlockGlow {
+  0%   { box-shadow:0 0 0px rgba(80,255,160,0); }
+  50%  { box-shadow:0 0 24px rgba(80,255,160,0.7); }
+  100% { box-shadow:0 0 0px rgba(80,255,160,0); }
+}
+#lockIconImg { transition:opacity 0.15s; }
+#lockIconImg.unlock-anim {
+  animation:unlockPop 0.55s cubic-bezier(.36,.07,.19,.97) forwards,
+             unlockGlow 0.8s ease forwards;
+}
+
+/* ===== アップデート履歴オーバーレイ ===== */
+#historyOverlay {
+  position:fixed; inset:0; z-index:99998;
+  display:none; overflow-y:auto;
+  background:#ffffff;
+  font-family:"Ubuntu",sans-serif;
+  color:#333; line-height:1.6;
+  animation:fadeInHist 0.15s ease;
+}
+#historyOverlay.active { display:block; }
+@keyframes fadeInHist { from{opacity:0} to{opacity:1} }
+
+#historyOverlayInner {
+  max-width:800px;
+  margin:0 auto;
+  padding:40px 40px 40px 220px;
+  position:relative;
+}
+
+#historyCloseBtn {
+  position:fixed;
+  top:14px; right:20px;
+  z-index:100000;
+  padding:8px 18px;
+  background:#333; color:#fff;
+  border:none; border-radius:6px;
+  cursor:pointer; font-size:13px;
+  font-family:"Ubuntu",sans-serif;
+  transition:background 0.15s;
+}
+#historyCloseBtn:hover { background:#555; }
+
+.sidebar-hist {
+  position:fixed;
+  left:0; top:0;
+  width:180px; height:100%;
+  background:#f4f4f4;
+  padding:20px;
+  border-right:1px solid #ddd;
+  z-index:99999;
+}
+.sidebar-hist h2 { margin-bottom:10px; font-size:16px; }
+.sidebar-hist a {
+  display:block; padding:10px;
+  color:#333; text-decoration:none;
+  border-bottom:1px solid #ddd;
+}
+.sidebar-hist a:hover { background:#e0e0e0; }
+
+.hist-header-container {
+  display:flex; align-items:center; gap:15px;
+  margin-bottom:30px;
+  border-bottom:2px solid #eee;
+  padding-bottom:10px;
+}
+.hist-logo { width:50px; height:50px; }
+.hist-title-text { font-size:1.8em; font-weight:300; margin:0; }
+
+.hist-update-section { margin-top:30px; }
+.hist-version {
+  font-weight:bold; color:#555; font-size:1.2em;
+  border-left:4px solid #333; padding-left:10px;
+  margin-bottom:8px;
+}
+.hist-update-section ul { margin-top:8px; padding-left:20px; }
+.hist-update-section li { margin-bottom:4px; }
+
+.hist-bug-section {
+  background:#fff5f5; padding:20px;
+  border:1px solid #ffcccc; border-radius:8px;
+}
+.hist-bug-section ul { padding-left:20px; }
+.hist-bug-section li { margin-bottom:8px; }
+
+.hist-footer {
+  margin-top:40px; font-size:0.9em;
+  color:#888; text-align:center;
+}
