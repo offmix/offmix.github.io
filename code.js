@@ -271,6 +271,13 @@ function toggleFullscreen() {
   else document.exitFullscreen();
 }
 
+/* ── タブ名偽装適用 ── */
+function applyDisguise() {
+  var title = document.getElementById('disguiseTitleInput').value.trim();
+  if (title) document.title = title;
+  document.getElementById('toolPopup').classList.remove('open');
+}
+
 /* ── アイコン定数 ── */
 var ICON_LOCKED   = 'https://cdn.phototourl.com/free/2026-06-01-939348a6-aaed-44d3-badd-70adb8ba5717.png';
 var ICON_UNLOCKED = 'https://cdn.phototourl.com/free/2026-06-01-d18bd43b-5f1c-4a80-97b8-e444f4c85852.png';
@@ -656,6 +663,9 @@ document.addEventListener('DOMContentLoaded', function () {
   };
   document.getElementById('addTabBtn').onclick = function () { createTab(); };
   document.getElementById('screensaver').addEventListener('click', hideScreensaver);
+
+  var fsBtn = document.getElementById('fullscreenBtn');
+  if (fsBtn) fsBtn.addEventListener('click', toggleFullscreen);
 
   /* キーボードショートカット */
   document.addEventListener('keydown', function (e) {
