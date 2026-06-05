@@ -240,14 +240,14 @@ body.veil-on{filter:brightness(0.72) saturate(0.6)}
 
 /* ===== アップデート履歴オーバーレイ ===== */
 #historyOverlay {
-  position:fixed; inset:0; z-index:99998;
+  position:fixed; inset:0; z-index:100001;
   display:none; overflow-y:auto;
   background:#ffffff;
   font-family:"Ubuntu",sans-serif;
   color:#333; line-height:1.6;
   animation:fadeInHist 0.15s ease;
 }
-#historyOverlay.active { display:block; }
+#historyOverlay.active { display:block !important; }
 @keyframes fadeInHist { from{opacity:0} to{opacity:1} }
 
 #historyOverlayInner {
