@@ -311,7 +311,7 @@
           <li>RAM/FPSモニターを追加しました。</li>
           <li>タブバーにファビコン対応にしました。</li>
           <li>Ctrl+Tで新規タブ。iframeにフォーカスが当たっている場合は機能しません。</li>
-          <li>ボタンの文字を削除し、アイコンに変更しました。</li>
+          <li>ボタンのテキストを削除し、アイコンに変更しました。</li>
         </ul>
       </div>
       <div class="hist-update-section">
@@ -404,20 +404,58 @@
   <div id="addTabBtn" title="新しいタブ">＋</div>
 </div>
 
+<!-- 背景メニュー -->
+<div id="bgMenu">
+  <div class="bg-option" data-bg="https://custom-images.strikinglycdn.com/res/hrscywv4p/image/upload/c_limit,fl_lossy,h_9000,w_1200,f_auto,q_auto/8103728/282569_954041.jpeg">🌊 デフォルト</div>
+  <div class="bg-option" data-bg="https://upload.wikimedia.org/wikipedia/commons/thumb/1/1b/Ginza_line_Shibuya_201309.jpg/1280px-Ginza_line_Shibuya_201309.jpg">🗼 渋谷</div>
+  <div class="bg-option" data-bg="https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Odori_Park_Sapporo_autumn.jpg/1280px-Odori_Park_Sapporo_autumn.jpg">🌃 札幌 大通公園の夜景</div>
+  <div class="bg-option" data-bg="https://upload.wikimedia.org/wikipedia/commons/thumb/5/5f/Mount_Fuji_from_Hotel_Mt.Fuji_2011-10-27.jpg/1280px-Mount_Fuji_from_Hotel_Mt.Fuji_2011-10-27.jpg">🍂 秋の富士山</div>
+  <div class="bg-option" data-bg="https://upload.wikimedia.org/wikipedia/commons/thumb/f/f8/Neuschwanstein_Castle_from_Marienbrücke.jpg/1280px-Neuschwanstein_Castle_from_Marienbrücke.jpg">🏰 ノイシュヴァンシュタイン城</div>
+  <div class="bg-option" data-bg="https://upload.wikimedia.org/wikipedia/commons/thumb/3/3e/Karakoram_from_Gondogoro_La.jpg/1280px-Karakoram_from_Gondogoro_La.jpg">⛰ 日本アルプスの山々</div>
+  <div class="bg-option" data-bg="linear-gradient(135deg,#001a00,#003300,#00ff41,#001a00)" data-type="gradient">💚 サイバーグリーン</div>
+  <div class="bg-option" data-bg="">⬛ なし（黒）</div>
+</div>
+
+<!-- ツールポップアップ -->
+<div id="toolPopup">
+  <p style="font-size:15px;margin-bottom:10px;">🔧 メニュー</p>
+  <button id="gustBtn" onclick="window.open('https://gust.vercel.app','_blank')">🚀 GUST（軽量プロキシ）</button>
+  <p style="font-size:11px;color:#888;margin-top:4px;">超軽量な強力プロキシ</p>
+  <hr>
+  <p style="font-size:15px;margin-bottom:10px;">⚙️ 設定</p>
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+    <span style="color:#aaa;font-size:12px;">🔐 ロック機能</span>
+    <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+      <span id="lockToggleLabel" style="font-size:11px;color:#888;">無効</span>
+      <div id="lockToggleWrap" onclick="toggleLockSetting()" style="width:36px;height:20px;border-radius:10px;background:#333;border:1px solid #555;position:relative;cursor:pointer;transition:background 0.2s;">
+        <div id="lockToggleThumb" style="position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:#888;transition:all 0.2s;"></div>
+      </div>
+    </label>
+  </div>
+  <hr style="margin:4px 0 10px;">
+  <p style="margin-bottom:6px;color:#aaa;font-size:12px;">タブ名・ファビコン偽装</p>
+  <div style="display:flex;flex-direction:column;gap:6px;">
+    <input type="text" id="disguiseTitleInput" placeholder="タブ名" style="width:100%;height:28px;padding:0 8px;border-radius:5px;border:1px solid #555;background:#222;color:#fff;font-size:12px;outline:none;box-sizing:border-box;">
+    <button onclick="applyDisguise()" style="height:28px;border-radius:5px;border:none;background:#444;color:#fff;cursor:pointer;font-size:12px;font-family:Ubuntu,sans-serif;">適用</button>
+  </div>
+  <hr style="margin:10px 0;">
+  <button id="fullscreenBtn" style="width:100%;height:32px;border-radius:5px;border:1px solid #555;background:transparent;color:#ccc;cursor:pointer;font-size:12px;font-family:Ubuntu,sans-serif;">⛶ フルスクリーン</button>
+</div>
+
 <!-- ナビバー -->
 <div class="navbar">
   <img id="logoImg" src="https://cdn.phototourl.com/free/2026-05-27-4d659095-dd46-430b-af9f-a5d9e74d9b22.png" alt="Logo" title="ホームに戻る">
   <div id="clock"></div>
-  <button class="nbtn" id="refreshButton">↻</button>
+  <button class="nbtn" id="refreshButton" style="font-size:20px;width:48px;">↻</button>
   <input type="text" id="urlInput" placeholder="URLまたは検索語句を入力してください...">
-  <button class="nbtn" id="goButton">GO</button>
+  <button class="nbtn" id="goButton" style="font-size:15px;padding:0 20px;">GO</button>
   <button class="nbtn icon-btn" id="bgButton" title="背景変更"><img src="https://cdn.phototourl.com/free/2026-06-01-110335f7-0313-48c0-acf1-b105d08e9b87.png" class="nav-icon"></button>
   <button class="nbtn icon-btn" id="historyButton" title="更新情報"><img src="https://cdn.phototourl.com/free/2026-06-01-60ab0fca-bff4-4c59-b3af-7661b1a40a1c.png" class="nav-icon"></button>
   <button class="nbtn icon-btn" id="resetButton" title="終了"><img src="https://cdn.phototourl.com/free/2026-06-01-128fbbac-d760-4868-b79e-53dabf56bfcc.png" class="nav-icon"></button>
   <button id="panicBtn" class="icon-btn" title="偽装"><img src="https://cdn.phototourl.com/free/2026-06-01-1220b0e3-5a62-422e-be44-fa53dd0851ec.png" class="nav-icon"></button>
   <button id="filterBtn" class="icon-btn" title="覗き見防止"><img src="https://cdn.phototourl.com/free/2026-06-01-c71de68e-f4ac-4c8f-88d5-96528d3b3437.png" class="nav-icon"></button>
-  <button class="nbtn" id="memoToggleBtn">メモ</button>
-  <button class="nbtn" id="menuButton">≡</button>
+  <button class="nbtn" id="memoToggleBtn" style="font-size:14px;padding:0 16px;">メモ</button>
+  <button class="nbtn" id="menuButton" style="font-size:22px;width:48px;">≡</button>
 </div>
 
 <div id="mainContent">
