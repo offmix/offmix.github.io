@@ -271,11 +271,22 @@ function toggleFullscreen() {
   else document.exitFullscreen();
 }
 
-/* ── タブ名偽装適用 ── */
+/* ── タブ名・ファビコン偽装適用 ── */
 function applyDisguise() {
-  var title = document.getElementById('disguiseTitleInput').value.trim();
+  var title   = (document.getElementById('disguiseTitleInput').value  || '').trim();
+  var favicon = (document.getElementById('disguiseFaviconInput').value || '').trim();
   if (title) document.title = title;
+  if (favicon) setFavicon(favicon);
   document.getElementById('toolPopup').classList.remove('open');
+}
+function applyDisguiseTemplate(title, faviconUrl) {
+  document.getElementById('disguiseTitleInput').value  = title;
+  document.getElementById('disguiseFaviconInput').value = faviconUrl;
+}
+function setFavicon(url) {
+  var link = document.querySelector("link[rel*='icon']");
+  if (!link) { link = document.createElement('link'); link.rel = 'icon'; document.head.appendChild(link); }
+  link.href = url;
 }
 
 /* ── アイコン定数 ── */
@@ -512,21 +523,41 @@ function runBootAnimation() {
   }, 2600);
 }
 
-/* ── アドレスバー常時反映ポーリング ── */
+/* ── アドレスバー＆タブタイトル常時反映ポーリング ── */
 function startUrlPolling() {
   setInterval(function() {
     var tab = tabs.find(function(t){ return t.id === activeTabId; });
     if (!tab || !tab.frameEl) return;
     try {
-      var loc = tab.frameEl.contentWindow.location.href;
+      var cw  = tab.frameEl.contentWindow;
+      var loc = cw.location.href;
+      var ttl = cw.document.title;
+
+      /* URL変化を検知 → アドレスバーに反映 */
       if (loc && loc !== 'about:blank' && loc !== tab.url) {
         tab.url = loc;
         document.getElementById('urlInput').value = loc;
-        tab.tabEl.querySelector('.tab-title').textContent = getSiteName(loc);
         saveTabSession();
+
+        /* ファビコン更新 */
+        try {
+          var favImg = tab.tabEl.querySelector('.tab-favicon');
+          if (!favImg) {
+            favImg = document.createElement('img');
+            favImg.className = 'tab-favicon';
+            tab.tabEl.insertBefore(favImg, tab.tabEl.querySelector('.tab-title'));
+          }
+          favImg.src = 'https://www.google.com/s2/favicons?sz=32&domain=' + new URL(loc).hostname;
+        } catch(e2){}
+      }
+
+      /* タブタイトルを常時サイト名で更新 */
+      if (ttl && ttl.trim() && ttl !== tab.lastTitle) {
+        tab.lastTitle = ttl;
+        tab.tabEl.querySelector('.tab-title').textContent = ttl;
       }
     } catch(e) {}
-  }, 500);
+  }, 600);
 }
 
 /* ── FPS + RAM ── */
