@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>アップデート内容、履歴│既知のバグ│ Untraceable Browser</title>
+  <link rel="icon" href="https://aicreation-file.miricanvas.com/a00/production/private/txt2img/2026/05/23/14/cf83ba53-7234-47e7-9fc4-5e638a88062b.png">
+  <link href="https://fonts.googleapis.com/css2?family=Ubuntu:wght@300;400&display=swap" rel="stylesheet">
+  <style>
+    body { font-family:"Ubuntu",sans-serif; background:#fff; color:#333; line-height:1.6; margin:0; padding:0; }
+    .sidebar { position:fixed; left:0; top:0; width:160px; height:100%; background:#f4f4f4; padding:16px; border-right:1px solid #ddd; box-sizing:border-box; }
+    .sidebar h2 { font-size:14px; margin-bottom:12px; color:#555; }
+    .sidebar a { display:block; padding:8px 10px; color:#333; text-decoration:none; border-bottom:1px solid #ddd; font-size:13px; }
+    .sidebar a:hover { background:#e0e0e0; }
+    .main-content { margin-left:180px; padding:30px 40px; }
+    .header-container { display:flex; align-items:center; gap:12px; margin-bottom:24px; border-bottom:2px solid #eee; padding-bottom:10px; }
+    .logo { width:42px; height:42px; }
+    .title-text { font-size:1.6em; font-weight:300; margin:0; }
+    .btn-group { margin-top:16px; display:flex; gap:10px; }
+    .btn { padding:8px 18px; border:1px solid #333; border-radius:5px; text-decoration:none; color:#333; font-size:13px; }
+    .btn:hover { background:#f0f0f0; }
+    .update-section { margin-top:32px; }
+    .version { font-weight:bold; color:#555; font-size:1.1em; border-left:4px solid #333; padding-left:10px; margin-bottom:8px; }
+    ul { margin-top:8px; padding-left:20px; }
+    li { margin-bottom:4px; font-size:14px; }
+    .bug-section { margin-top:40px; background:#fff5f5; padding:18px; border:1px solid #ffcccc; border-radius:8px; }
+    .bug-section h2 { margin-top:0; }
+    .footer { margin-top:40px; font-size:0.85em; color:#888; text-align:center; padding-bottom:30px; }
+  </style>
+</head>
+<body>
+  <div class="sidebar">
+    <h2>目次</h2>
+    <a href="#history">アップデート履歴</a>
+    <a href="#bugs">既知のバグ</a>
+  </div>
+
+  <div class="main-content">
+    <div class="header-container">
+      <img src="https://aicreation-file.miricanvas.com/a00/production/private/txt2img/2026/05/23/14/cf83ba53-7234-47e7-9fc4-5e638a88062b.png" alt="Logo" class="logo">
+      <h1 class="title-text">Untraceable Browser</h1>
+    </div>
+
+    <h2 id="history">アップデート情報</h2>
+    <div class="btn-group">
+      <a href="https://html.cafe/x71eff58a" class="btn" target="_blank">← 公式サイトへ</a>
+    </div>
+
+    <div class="update-section">
+      <p class="version">Ver.1.8.0 2026/06/05</p>
+      <ul>
+        <li>更新情報ページをモーダル内表示に変更（外部サイトへ飛ばなくなりました）。</li>
+        <li>HTML / CSS / JS をファイル分割しました。</li>
+      </ul>
+    </div>
+
+    <div class="update-section">
+      <p class="version">Ver.1.7.1 2026/06/05</p>
+      <ul>
+        <li>JS の定義順バグを修正。すべてのボタンが正常に動作するようになりました。</li>
+        <li>メモボタンをナビバーに統合しました。</li>
+        <li>メモパネルのヘッダーをドラッグして位置移動できるようにしました。</li>
+        <li>メモに文字サイズ変更機能を追加しました。</li>
+        <li>メモパネル右上に × 閉じるボタンを追加しました。</li>
+      </ul>
+    </div>
+
+    <div class="update-section">
+      <p class="version">Ver.1.5.0〜1.6.0 2026/06/04</p>
+      <ul>
+        <li>覗き見防止フィルターを半透明ベール方式に変更。ONで明度・彩度も低下。</li>
+        <li>複数タブ対応（タブバーを追加）。</li>
+        <li>メモ機能の追加（30秒自動保存・文字色変更・localStorageに保存）。</li>
+        <li>ロゴクリックでHOMEに戻る機能を追加。</li>
+        <li>ナビバーのUIを小型化。</li>
+      </ul>
+    </div>
+
+    <div class="update-section">
+      <p class="version">Ver.1.2.8 2026/05/27</p>
+      <ul>
+        <li>ページ偽装機能を追加しました。Shift+Escで閉じる。</li>
+        <li>30秒操作なしでスクリーンセーバーを起動する機能を追加。</li>
+        <li>覗き見防止モードを追加しました。</li>
+        <li>緊急脱出を削除しました。</li>
+        <li>左上アイコンをタップでHOMEに戻れます。</li>
+        <li>メモ機能の追加。</li>
+        <li>複数タブに対応しました。</li>
+        <li>背景「サイバーグリーン」を追加しました。</li>
+        <li>RAM/FPSモニターを追加しました。</li>
+        <li>タブバーにファビコン対応にしました。</li>
+        <li>Ctrl+Tで新規タブ（iframeフォーカス時は不可）。</li>
+      </ul>
+    </div>
+
+    <div class="update-section">
+      <p class="version">Ver.1.2.0 2026/05/25</p>
+      <ul>
+        <li>画面右上にアイコン表示を追加しました。</li>
+        <li>アップデート履歴を「アップデート情報・バグ」に変更しました。</li>
+        <li>メニューボタンを追加しました。</li>
+        <li>メニューに軽量プロキシ GUST を追加しました。</li>
+      </ul>
+    </div>
+
+    <div class="update-section">
+      <p class="version">Ver.1.1.5 2026/05/24</p>
+      <ul>
+        <li>サイドバーを追加しました。</li>
+        <li>サイドバーにお気に入り機能を追加しました。</li>
+        <li>緊急脱出機能を追加（「q」キーでWikipediaへ移動）。</li>
+      </ul>
+    </div>
+
+    <div class="update-section">
+      <p class="version">Ver.1.1.3 2026/05/24</p>
+      <ul>
+        <li>背景選択メニューに「秋の富士山」と「ノイシュヴァンシュタイン城」を追加。</li>
+        <li>時刻表示機能を追加しました。</li>
+        <li>ブラウザアイコン（ファビコン）を専用デザインに変更しました。</li>
+        <li>UIフォントを「Ubuntu」に統一しました。</li>
+        <li>アップデート履歴ボタン・ページを追加。</li>
+      </ul>
+    </div>
+
+    <div class="update-section">
+      <p class="version">Ver.1.1.2 2026/05/24</p>
+      <ul>
+        <li>背景選択メニューに「札幌 大通公園の夜景」「日本アルプス」を追加。</li>
+        <li>再読み込み機能を追加しました。</li>
+        <li>履歴を残さないセッションリセット機能の実装。</li>
+        <li>戻るボタンを削除しました。</li>
+      </ul>
+    </div>
+
+    <div class="update-section">
+      <p class="version">Ver.1.1.1 2026/05/23</p>
+      <ul>
+        <li>背景機能を追加しました。</li>
+        <li>戻るボタンを追加。UIを調節しました。</li>
+      </ul>
+    </div>
+
+    <div class="update-section">
+      <p class="version">Ver.1.1.0 2026/05/22</p>
+      <ul>
+        <li>UI調整、ホームの追加をして正式版公開。</li>
+      </ul>
+    </div>
+
+    <div class="update-section">
+      <p class="version">Ver.1.0.0 β 2026/05/22</p>
+      <ul>
+        <li>iframeを活用した最低限のブラウジング機能を搭載したβ版公開。</li>
+      </ul>
+    </div>
+
+    <h2 id="bugs" style="margin-top:50px;">既知のバグ・制限事項</h2>
+    <div class="bug-section">
+      <ul>
+        <li><strong>X-Frame-Options制限:</strong> 一部のWebサイト（Google・SNS等）はiframe内での表示がブロックされる場合があります。</li>
+        <li><strong>偽装ページが反応しない場合:</strong> フォーカスがiframeに移っている場合、Escキーが効かない場合があります。</li>
+        <li><strong>フォーカス追従:</strong> iframe内から親ページへフォーカスを戻した際、一部の環境でスクロール位置がリセットされる場合があります。</li>
+      </ul>
+    </div>
+
+    <div class="footer">
+      &copy; 2026 Untraceable Browser Project<br>
+      連絡先: off_mix@proton.me
+    </div>
+  </div>
+</body>
+</html>
