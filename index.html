@@ -311,7 +311,6 @@
           <li>RAM/FPSモニターを追加しました。</li>
           <li>タブバーにファビコン対応にしました。</li>
           <li>Ctrl+Tで新規タブ。iframeにフォーカスが当たっている場合は機能しません。</li>
-          <li>ボタンのテキストを削除し、アイコンに変更しました。</li>
         </ul>
       </div>
       <div class="hist-update-section">
@@ -419,7 +418,7 @@
 <!-- ツールポップアップ -->
 <div id="toolPopup">
   <p style="font-size:15px;margin-bottom:10px;">🔧 メニュー</p>
-  <button id="gustBtn" onclick="window.open('https://gust.vercel.app','_blank')">🚀 GUST（軽量プロキシ）</button>
+  <button id="gustBtn" onclick="window.open('https://gust.vercel.app','_blank')">🌪️ GUST</button>
   <p style="font-size:11px;color:#888;margin-top:4px;">超軽量な強力プロキシ</p>
   <hr>
   <p style="font-size:15px;margin-bottom:10px;">⚙️ 設定</p>
@@ -435,7 +434,17 @@
   <hr style="margin:4px 0 10px;">
   <p style="margin-bottom:6px;color:#aaa;font-size:12px;">タブ名・ファビコン偽装</p>
   <div style="display:flex;flex-direction:column;gap:6px;">
-    <input type="text" id="disguiseTitleInput" placeholder="タブ名" style="width:100%;height:28px;padding:0 8px;border-radius:5px;border:1px solid #555;background:#222;color:#fff;font-size:12px;outline:none;box-sizing:border-box;">
+    <input type="text" id="disguiseTitleInput" placeholder="タブ名（例：Google）" style="width:100%;height:28px;padding:0 8px;border-radius:5px;border:1px solid #555;background:#222;color:#fff;font-size:12px;outline:none;box-sizing:border-box;">
+    <input type="text" id="disguiseFaviconInput" placeholder="ファビコンURL（例：https://...）" style="width:100%;height:28px;padding:0 8px;border-radius:5px;border:1px solid #555;background:#222;color:#fff;font-size:12px;outline:none;box-sizing:border-box;">
+    <p style="color:#666;font-size:11px;margin:0;">テンプレート：</p>
+    <div style="display:flex;flex-wrap:wrap;gap:4px;">
+      <button onclick="applyDisguiseTemplate('Google','https://www.google.com/favicon.ico')" style="font-size:11px;padding:3px 8px;border-radius:4px;border:1px solid #555;background:#2a2a2a;color:#ccc;cursor:pointer;">Google</button>
+      <button onclick="applyDisguiseTemplate('YouTube','https://www.youtube.com/favicon.ico')" style="font-size:11px;padding:3px 8px;border-radius:4px;border:1px solid #555;background:#2a2a2a;color:#ccc;cursor:pointer;">YouTube</button>
+      <button onclick="applyDisguiseTemplate('Wikipedia','https://www.wikipedia.org/favicon.ico')" style="font-size:11px;padding:3px 8px;border-radius:4px;border:1px solid #555;background:#2a2a2a;color:#ccc;cursor:pointer;">Wikipedia</button>
+      <button onclick="applyDisguiseTemplate('Twitter','https://twitter.com/favicon.ico')" style="font-size:11px;padding:3px 8px;border-radius:4px;border:1px solid #555;background:#2a2a2a;color:#ccc;cursor:pointer;">Twitter</button>
+      <button onclick="applyDisguiseTemplate('Amazon','https://www.amazon.co.jp/favicon.ico')" style="font-size:11px;padding:3px 8px;border-radius:4px;border:1px solid #555;background:#2a2a2a;color:#ccc;cursor:pointer;">Amazon</button>
+      <button onclick="applyDisguiseTemplate('Microsoft','https://www.microsoft.com/favicon.ico')" style="font-size:11px;padding:3px 8px;border-radius:4px;border:1px solid #555;background:#2a2a2a;color:#ccc;cursor:pointer;">Microsoft</button>
+    </div>
     <button onclick="applyDisguise()" style="height:28px;border-radius:5px;border:none;background:#444;color:#fff;cursor:pointer;font-size:12px;font-family:Ubuntu,sans-serif;">適用</button>
   </div>
   <hr style="margin:10px 0;">
