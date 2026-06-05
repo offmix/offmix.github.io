@@ -1,3 +1,276 @@
+/* ── タブ管理 ── */
+var tabs = [];
+var activeTabId = null;
+var tabIdCounter = 0;
+
+function getSiteName(url) {
+  try { return new URL(url).hostname || '新しいタブ'; } catch(e) { return '新しいタブ'; }
+}
+
+function saveTabSession() {
+  var data = tabs.map(function(t){ return { id:t.id, url:t.url }; });
+  try { localStorage.setItem('untraceable_tabs', JSON.stringify(data)); } catch(e){}
+}
+
+function restoreTabSession() {
+  try {
+    var data = JSON.parse(localStorage.getItem('untraceable_tabs') || 'null');
+    if (!data || !data.length) return false;
+    data.forEach(function(d){ createTab(d.url); });
+    return true;
+  } catch(e){ return false; }
+}
+
+function createTab(url) {
+  var id = ++tabIdCounter;
+  var tabbar = document.getElementById('tabbar');
+  var addBtn = document.getElementById('addTabBtn');
+
+  var tabEl = document.createElement('div');
+  tabEl.className = 'tab';
+  tabEl.dataset.id = id;
+  tabEl.innerHTML = '<span class="tab-title">新しいタブ</span><button class="tab-close">×</button>';
+  tabbar.insertBefore(tabEl, addBtn);
+
+  var frame = document.createElement('iframe');
+  frame.className = 'tab-frame';
+  frame.id = 'frame-' + id;
+  frame.sandbox = 'allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-presentation';
+  document.getElementById('mainContent').appendChild(frame);
+
+  var tab = { id:id, url: url||'', frameEl: frame, tabEl: tabEl };
+  tabs.push(tab);
+
+  tabEl.addEventListener('click', function(e){
+    if (e.target.classList.contains('tab-close')) {
+      closeTab(id); return;
+    }
+    switchTab(id);
+  });
+
+  switchTab(id);
+  if (url) loadUrlToTab(id, url);
+  return tab;
+}
+
+function switchTab(id) {
+  activeTabId = id;
+  tabs.forEach(function(t){
+    t.tabEl.classList.toggle('active', t.id === id);
+    t.frameEl.classList.toggle('active', t.id === id);
+  });
+  var tab = tabs.find(function(t){ return t.id===id; });
+  if (tab) document.getElementById('urlInput').value = tab.url || '';
+  var msg = document.getElementById('messageArea');
+  if (tab && !tab.url) msg.style.display='flex'; else msg.style.display='none';
+}
+
+function closeTab(id) {
+  var idx = tabs.findIndex(function(t){ return t.id===id; });
+  if (idx < 0) return;
+  var tab = tabs[idx];
+  tab.tabEl.remove();
+  tab.frameEl.remove();
+  tabs.splice(idx, 1);
+  if (!tabs.length) { createTab(); return; }
+  var next = tabs[Math.min(idx, tabs.length-1)];
+  switchTab(next.id);
+}
+
+function loadUrlToTab(id, raw) {
+  var tab = tabs.find(function(t){ return t.id===id; });
+  if (!tab) return;
+  var url = raw.trim();
+  if (!/^https?:\/\//i.test(url)) {
+    if (url.includes('.') && !url.includes(' ')) url = 'https://' + url;
+    else url = 'https://www.google.com/search?q=' + encodeURIComponent(url);
+  }
+  tab.url = url;
+  tab.tabEl.querySelector('.tab-title').textContent = getSiteName(url);
+  document.getElementById('urlInput').value = url;
+  document.getElementById('messageArea').style.display = 'none';
+  var lo = document.getElementById('loadingOverlay');
+  lo.classList.add('active');
+  tab.frameEl.onload = function(){ lo.classList.remove('active'); };
+  tab.frameEl.src = url;
+  /* ファビコン取得 */
+  try {
+    var favImg = document.createElement('img');
+    favImg.src = 'https://www.google.com/s2/favicons?sz=32&domain=' + new URL(url).hostname;
+    favImg.className = 'tab-favicon';
+    var titleEl = tab.tabEl.querySelector('.tab-title');
+    var existing = tab.tabEl.querySelector('.tab-favicon');
+    if (existing) existing.remove();
+    tab.tabEl.insertBefore(favImg, titleEl);
+  } catch(e){}
+  saveTabSession();
+}
+
+function loadUrl(url) { loadUrlToTab(activeTabId, url); }
+
+/* ── 時計 ── */
+function updateClock() {
+  var now = new Date();
+  var y   = now.getFullYear();
+  var mo  = pad(now.getMonth()+1);
+  var d   = pad(now.getDate());
+  var h   = pad(now.getHours());
+  var mi  = pad(now.getMinutes());
+  var el  = document.getElementById('clock');
+  if (el) el.innerHTML = y + '/' + mo + '/' + d + '<br>' + h + ':' + mi;
+}
+
+/* ── スクリーンセーバー ── */
+var ssActive = false;
+var idleTimer = null;
+var IDLE_MS = 30000;
+
+function resetIdleTimer() {
+  clearTimeout(idleTimer);
+  if (ssActive) return;
+  idleTimer = setTimeout(showScreensaver, IDLE_MS);
+}
+
+function showScreensaver() {
+  ssActive = true;
+  var ss = document.getElementById('screensaver');
+  ss.classList.add('active');
+  updateSsClock();
+}
+
+function hideScreensaver() {
+  ssActive = false;
+  document.getElementById('screensaver').classList.remove('active');
+  resetIdleTimer();
+}
+
+function updateSsClock() {
+  if (!ssActive) return;
+  var now = new Date();
+  document.getElementById('ssClock').textContent = pad(now.getHours()) + ':' + pad(now.getMinutes());
+  var days = ['日','月','火','水','木','金','土'];
+  document.getElementById('ssDate').textContent =
+    now.getFullYear() + '年' + (now.getMonth()+1) + '月' + now.getDate() + '日（' + days[now.getDay()] + '）';
+  setTimeout(updateSsClock, 1000);
+}
+
+/* ── 偽装（ダミー）ページ ── */
+var dummyActive = false;
+
+function showDummy() {
+  dummyActive = true;
+  document.getElementById('disguiseOverlay').classList.add('active');
+  document.getElementById('disguiseHint').classList.add('active');
+}
+
+function hideDummy() {
+  dummyActive = false;
+  document.getElementById('disguiseOverlay').classList.remove('active');
+  document.getElementById('disguiseHint').classList.remove('active');
+}
+
+/* 地理ノート ナビ */
+function geoShowPage(name, linkEl) {
+  document.querySelectorAll('.geo-page').forEach(function(p){ p.classList.remove('geo-active'); });
+  var pg = document.getElementById('geo-page-' + name);
+  if (pg) pg.classList.add('geo-active');
+  document.querySelectorAll('#geo-nav a').forEach(function(a){ a.classList.remove('geo-active'); });
+  if (linkEl) linkEl.classList.add('geo-active');
+}
+function geoSwitchTab(btn, tabId) {
+  var nav = btn.closest('.geo-tab-nav') || btn.parentElement;
+  nav.querySelectorAll('.geo-tab-btn').forEach(function(b){ b.classList.remove('geo-active'); });
+  btn.classList.add('geo-active');
+  var parent = nav.parentElement;
+  parent.querySelectorAll('.geo-tab-content').forEach(function(c){ c.classList.remove('geo-active'); });
+  var tc = document.getElementById(tabId);
+  if (tc) tc.classList.add('geo-active');
+}
+
+/* ── 覗き見防止 ── */
+var filterOn = false;
+function toggleFilter() {
+  filterOn = !filterOn;
+  document.getElementById('darkVeil').classList.toggle('active', filterOn);
+  document.body.classList.toggle('veil-on', filterOn);
+  var btn = document.getElementById('filterBtn');
+  if (btn) btn.classList.toggle('on', filterOn);
+  document.getElementById('privacyStatus').textContent = filterOn ? '覗き見防止 ON' : '待機中';
+}
+
+/* ── 背景 ── */
+var BG_LIST = [
+  { label:'デフォルト', url:'https://custom-images.strikinglycdn.com/res/hrscywv4p/image/upload/c_limit,fl_lossy,h_9000,w_1200,f_auto,q_auto/8103728/282569_954041.jpeg' },
+  { label:'秋の富士山', url:'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1b/Above_Clouds.jpg/1280px-Above_Clouds.jpg' },
+  { label:'ノイシュヴァンシュタイン城', url:'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f8/Schloss_Neuschwanstein_2013.jpg/1280px-Schloss_Neuschwanstein_2013.jpg' },
+  { label:'札幌 大通公園の夜景', url:'https://upload.wikimedia.org/wikipedia/commons/thumb/9/97/Odori_Park_illumination.jpg/1280px-Odori_Park_illumination.jpg' },
+  { label:'日本アルプスの山々', url:'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Hotaka.jpg/1280px-Hotaka.jpg' },
+  { label:'サイバーグリーン', url:'' }
+];
+
+function restoreBg() {
+  var saved = localStorage.getItem('untraceable_bg');
+  if (saved !== null) applyBg(saved);
+  /* 背景メニュー生成 */
+  var menu = document.getElementById('bgMenu');
+  if (!menu) return;
+  menu.innerHTML = '';
+  BG_LIST.forEach(function(bg){
+    var opt = document.createElement('div');
+    opt.className = 'bg-option';
+    opt.textContent = bg.label;
+    opt.onclick = function(){ applyBg(bg.url); localStorage.setItem('untraceable_bg', bg.url); menu.classList.remove('open'); };
+    menu.appendChild(opt);
+  });
+}
+
+function applyBg(url) {
+  if (url) {
+    document.body.style.backgroundImage = 'url("' + url + '")';
+    document.body.style.backgroundColor = '';
+  } else {
+    document.body.style.backgroundImage = 'none';
+    document.body.style.backgroundColor = '#0a1a0a';
+  }
+}
+
+/* ── オーバーレイ系ユーティリティ ── */
+function makeOverlay(z) {
+  var ov = document.createElement('div');
+  ov.style.cssText = 'position:fixed;inset:0;z-index:'+z+';background:rgba(0,0,0,0.72);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;';
+  return ov;
+}
+function makeCard() {
+  var c = document.createElement('div');
+  c.style.cssText = 'background:#1a1a1a;border:1px solid #444;border-radius:14px;padding:28px 24px;width:320px;max-width:90vw;transition:transform 0.08s;';
+  return c;
+}
+function makePassRow(label) {
+  var wrap = document.createElement('div');
+  wrap.style.cssText = 'margin-bottom:10px;';
+  var lbl = document.createElement('div');
+  lbl.style.cssText = 'font-size:11px;color:#888;margin-bottom:4px;';
+  lbl.textContent = label;
+  var inp = document.createElement('input');
+  inp.type = 'password';
+  inp.style.cssText = 'width:100%;height:34px;border-radius:7px;border:1px solid #555;background:#111;color:#fff;padding:0 10px;font-size:13px;outline:none;font-family:Ubuntu,sans-serif;box-sizing:border-box;';
+  wrap.appendChild(lbl); wrap.appendChild(inp);
+  return { wrap:wrap, inp:inp };
+}
+
+/* ── ウェルカム／ロック確認 ── */
+function maybeShowLock(cb) {
+  /* ロック機能が有効なら入力画面は initVisibilityLock に任せる */
+  cb();
+}
+function maybeShowWelcome(cb) { cb(); }
+
+/* ── フルスクリーン ── */
+function toggleFullscreen() {
+  if (!document.fullscreenElement) document.documentElement.requestFullscreen();
+  else document.exitFullscreen();
+}
+
 /* ── アイコン定数 ── */
 var ICON_LOCKED   = 'https://cdn.phototourl.com/free/2026-06-01-939348a6-aaed-44d3-badd-70adb8ba5717.png';
 var ICON_UNLOCKED = 'https://cdn.phototourl.com/free/2026-06-01-d18bd43b-5f1c-4a80-97b8-e444f4c85852.png';
@@ -291,11 +564,14 @@ function initMemoDrag() {
 /* ── アップデート履歴オーバーレイ表示／非表示 ── */
 function showHistoryOverlay() {
   var ov = document.getElementById('historyOverlay');
+  ov.style.display = 'block';
   ov.classList.add('active');
   ov.scrollTop = 0;
 }
 function hideHistoryOverlay() {
-  document.getElementById('historyOverlay').classList.remove('active');
+  var ov = document.getElementById('historyOverlay');
+  ov.classList.remove('active');
+  ov.style.display = 'none';
 }
 
 /* ── DOMContentLoaded ── */
@@ -449,4 +725,11 @@ document.addEventListener('DOMContentLoaded', function () {
   startUrlPolling();
   runFpsMonitor();
   resetIdleTimer();
+
+  /* 時計を起動 */
+  updateClock();
+  setInterval(updateClock, 1000);
+
+  /* ブックマークを確実に描画 */
+  renderFavs();
 });
