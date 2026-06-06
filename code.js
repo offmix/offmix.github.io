@@ -97,6 +97,52 @@ function autoDetectFavicon(url) {
   }
 }
 
+// ★ ダークモード自動適用
+function applyDarkModeIfAvailable(frame) {
+  try {
+    if (!frame || !frame.contentDocument) return;
+    
+    const doc = frame.contentDocument;
+    const win = frame.contentWindow;
+    
+    // metaタグでダークモード対応を確認
+    const colorScheme = doc.querySelector('meta[name="color-scheme"]');
+    if (colorScheme && colorScheme.content.includes('dark')) {
+      doc.documentElement.setAttribute('data-theme', 'dark');
+      doc.documentElement.style.colorScheme = 'dark';
+    }
+    
+    // prefers-color-scheme に対応
+    if (win.matchMedia && win.matchMedia('(prefers-color-scheme: dark)').matches) {
+      doc.documentElement.style.colorScheme = 'dark';
+      
+      const style = doc.createElement('style');
+      style.id = 'dark-mode-override';
+      style.textContent = `
+        @media (prefers-color-scheme: dark) {
+          :root { color-scheme: dark !important; }
+          html { color-scheme: dark !important; }
+          body { background-color: #1a1a1a !important; color: #ffffff !important; }
+        }
+        html[data-theme="dark"],
+        html[data-color-mode="dark"],
+        body.dark,
+        body.dark-mode {
+          background-color: #1a1a1a !important;
+          color: #ffffff !important;
+        }
+      `;
+      
+      // 既存のダークモードスタイルを削除してから追加
+      const existing = doc.getElementById('dark-mode-override');
+      if (existing) existing.remove();
+      doc.head.appendChild(style);
+    }
+  } catch (e) {
+    // クロスオリジン制限やその他のエラーは無視
+  }
+}
+
 function getSiteName(url) {
   try { return new URL(url).hostname || '新しいタブ'; } catch(e) { return '新しいタブ'; }
 }
@@ -196,7 +242,11 @@ function loadUrlToTab(id, raw) {
   
   var lo = document.getElementById('loadingOverlay');
   lo.classList.add('active');
-  tab.frameEl.onload = function(){ lo.classList.remove('active'); };
+  tab.frameEl.onload = function(){ 
+    lo.classList.remove('active'); 
+    // ★ ページロード後にダークモード適用
+    applyDarkModeIfAvailable(tab.frameEl);
+  };
   tab.frameEl.src = url;
   
   /* ★ 自動ファビコン取得 */
@@ -507,7 +557,7 @@ function initVisibilityLock() {
       '<div style="font-size:20px;font-weight:600;color:#fff;margin-bottom:6px;text-align:center;">ロック中</div>' +
       '<div class="vlk-sub" style="font-size:12px;color:#888;margin-bottom:18px;text-align:center;">パスフレーズを入力してください</div>' +
       '<div id="vlk-field"></div>' +
-      '<button id="vlk-ok" style="width:100%;height:36px;border-radius:7px;border:none;background:#1a5c34;color:#fff;cursor:pointer;font-size:13px;font-family:Ubuntu,sans-serif;margin-top:4px;">ロック解除</button>' +
+      '<button id="vlk-ok" style="width:100%;height:36px;border-radius:7px;border:none;background:#1a5c34;color:#fff;cursor:pointer;font-size:13px;font-family:Ubuntu,sans-serif;margin-top:4px;">解除</button>' +
       '<div id="vlk-err" style="margin-top:10px;font-size:12px;color:#f66;min-height:16px;text-align:center;"></div>';
     ov.appendChild(card);
     document.body.appendChild(ov);
