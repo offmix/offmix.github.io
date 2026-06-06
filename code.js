@@ -3,6 +3,100 @@ var tabs = [];
 var activeTabId = null;
 var tabIdCounter = 0;
 
+// 教育サイト・テンプレート拡充版
+var EDUCATION_TEMPLATES = {
+  'Google Classroom': 'https://ssl.gstatic.com/images/branding/product/1x/classroom_64dp.png',
+  'Moodle': 'https://moodle.org/theme/moodle/pix/favicon.ico',
+  'Canvas': 'https://du11hjcvx0uqb.cloudfront.net/dist/images/favicon-48x48-7c872ceb39.png',
+  'Quizlet': 'https://quizlet.com/favicon.ico',
+  'Khan Academy': 'https://www.khanacademy.org/apple-touch-icon.png',
+  'Zoom': 'https://zoom.us/favicon.ico',
+  'Schoology': 'https://app.schoology.com/favicon.ico',
+  'Google Meet': 'https://www.gstatic.com/images/branding/product/1x/meet_64dp.png',
+  'Microsoft Teams': 'https://www.microsoft.com/favicon.ico',
+  'EdPuzzle': 'https://edpuzzle.com/favicon.ico',
+  'Z会': 'https://www.zkai.co.jp/favicon.ico',
+  'ベネッセ': 'https://www.benesse.co.jp/favicon.ico',
+  'Google': 'https://www.google.com/favicon.ico',
+  'YouTube': 'https://www.youtube.com/favicon.ico',
+  'Wikipedia': 'https://www.wikipedia.org/favicon.ico',
+  'Twitter': 'https://twitter.com/favicon.ico',
+  'Amazon': 'https://www.amazon.co.jp/favicon.ico',
+  'Microsoft': 'https://www.microsoft.com/favicon.ico'
+};
+
+// ★ URL自動判定（YouTube→「YouTube」など）
+function autoDetectSiteName(url) {
+  try {
+    if (!url.includes('://')) {
+      url = 'https://' + url;
+    }
+    const urlObj = new URL(url);
+    const domain = urlObj.hostname.replace('www.', '');
+    
+    const siteMap = {
+      'youtube.com': 'YouTube',
+      'google.com': 'Google',
+      'wikipedia.org': 'Wikipedia',
+      'twitter.com': 'X (Twitter)',
+      'x.com': 'X',
+      'facebook.com': 'Facebook',
+      'instagram.com': 'Instagram',
+      'github.com': 'GitHub',
+      'amazon.co.jp': 'Amazon',
+      'amazon.com': 'Amazon',
+      'microsoft.com': 'Microsoft',
+      'linkedin.com': 'LinkedIn',
+      'reddit.com': 'Reddit',
+      'twitch.tv': 'Twitch',
+      'discord.com': 'Discord',
+      'gmail.com': 'Gmail',
+      'outlook.com': 'Outlook',
+      'classroom.google.com': 'Google Classroom',
+      'moodle.com': 'Moodle',
+      'schoology.com': 'Schoology',
+      'zoom.us': 'Zoom',
+      'meet.google.com': 'Google Meet',
+      'teams.microsoft.com': 'Microsoft Teams',
+      'canvas.instructure.com': 'Canvas',
+      'edpuzzle.com': 'EdPuzzle',
+      'quizlet.com': 'Quizlet',
+      'khan.co.jp': 'Khan Academy',
+      'khanacademy.org': 'Khan Academy',
+      'udemy.com': 'Udemy',
+      'coursera.org': 'Coursera',
+      'edx.org': 'edX'
+    };
+    
+    if (siteMap[domain]) {
+      return siteMap[domain];
+    }
+    
+    for (const [key, value] of Object.entries(siteMap)) {
+      if (domain.includes(key.split('.')[0])) {
+        return value;
+      }
+    }
+    
+    return domain.split('.')[0].charAt(0).toUpperCase() + domain.split('.')[0].slice(1);
+  } catch (e) {
+    return 'ページ';
+  }
+}
+
+// ★ 自動ファビコン取得
+function autoDetectFavicon(url) {
+  try {
+    if (!url.includes('://')) {
+      url = 'https://' + url;
+    }
+    const urlObj = new URL(url);
+    return 'https://www.google.com/s2/favicons?sz=32&domain=' + urlObj.hostname;
+  } catch (e) {
+    return 'https://www.google.com/favicon.ico';
+  }
+}
+
 function getSiteName(url) {
   try { return new URL(url).hostname || '新しいタブ'; } catch(e) { return '新しいタブ'; }
 }
@@ -38,7 +132,7 @@ function createTab(url) {
   frame.sandbox = 'allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-presentation';
   document.getElementById('mainContent').appendChild(frame);
 
-  var tab = { id:id, url: url||'', frameEl: frame, tabEl: tabEl };
+  var tab = { id:id, url: url||'', frameEl: frame, tabEl: tabEl, displayTitle: '' };
   tabs.push(tab);
 
   tabEl.addEventListener('click', function(e){
@@ -60,7 +154,10 @@ function switchTab(id) {
     t.frameEl.classList.toggle('active', t.id === id);
   });
   var tab = tabs.find(function(t){ return t.id===id; });
-  if (tab) document.getElementById('urlInput').value = tab.url || '';
+  if (tab) {
+    // ★ アドレスバーに即座反映
+    document.getElementById('urlInput').value = tab.url || '';
+  }
   var msg = document.getElementById('messageArea');
   if (tab && !tab.url) msg.style.display='flex'; else msg.style.display='none';
 }
@@ -86,17 +183,27 @@ function loadUrlToTab(id, raw) {
     else url = 'https://www.google.com/search?q=' + encodeURIComponent(url);
   }
   tab.url = url;
-  tab.tabEl.querySelector('.tab-title').textContent = getSiteName(url);
+  
+  // ★ 自動タブ名検出
+  var detectedName = autoDetectSiteName(url);
+  tab.displayTitle = detectedName;
+  tab.tabEl.querySelector('.tab-title').textContent = detectedName;
+  document.title = detectedName;
+  
+  // ★ URLをアドレスバーに即座反映
   document.getElementById('urlInput').value = url;
   document.getElementById('messageArea').style.display = 'none';
+  
   var lo = document.getElementById('loadingOverlay');
   lo.classList.add('active');
   tab.frameEl.onload = function(){ lo.classList.remove('active'); };
   tab.frameEl.src = url;
-  /* ファビコン取得 */
+  
+  /* ★ 自動ファビコン取得 */
   try {
+    var detectedFavicon = autoDetectFavicon(url);
     var favImg = document.createElement('img');
-    favImg.src = 'https://www.google.com/s2/favicons?sz=32&domain=' + new URL(url).hostname;
+    favImg.src = detectedFavicon;
     favImg.className = 'tab-favicon';
     var titleEl = tab.tabEl.querySelector('.tab-title');
     var existing = tab.tabEl.querySelector('.tab-favicon');
@@ -260,7 +367,6 @@ function makePassRow(label) {
 
 /* ── ウェルカム／ロック確認 ── */
 function maybeShowLock(cb) {
-  /* ロック機能が有効なら入力画面は initVisibilityLock に任せる */
   cb();
 }
 function maybeShowWelcome(cb) { cb(); }
@@ -271,18 +377,26 @@ function toggleFullscreen() {
   else document.exitFullscreen();
 }
 
-/* ── タブ名・ファビコン偽装適用 ── */
+/* ── ★ タブ名・ファビコン偽装適用（教育テンプレート拡充） ── */
 function applyDisguise() {
   var title   = (document.getElementById('disguiseTitleInput').value  || '').trim();
   var favicon = (document.getElementById('disguiseFaviconInput').value || '').trim();
-  if (title) document.title = title;
+  var tab = tabs.find(function(t){ return t.id === activeTabId; });
+  
+  if (title && tab) {
+    tab.displayTitle = title;
+    document.title = title;
+    tab.tabEl.querySelector('.tab-title').textContent = title;
+  }
   if (favicon) setFavicon(favicon);
   document.getElementById('toolPopup').classList.remove('open');
 }
+
 function applyDisguiseTemplate(title, faviconUrl) {
   document.getElementById('disguiseTitleInput').value  = title;
   document.getElementById('disguiseFaviconInput').value = faviconUrl;
 }
+
 function setFavicon(url) {
   var link = document.querySelector("link[rel*='icon']");
   if (!link) { link = document.createElement('link'); link.rel = 'icon'; document.head.appendChild(link); }
@@ -393,7 +507,7 @@ function initVisibilityLock() {
       '<div style="font-size:20px;font-weight:600;color:#fff;margin-bottom:6px;text-align:center;">ロック中</div>' +
       '<div class="vlk-sub" style="font-size:12px;color:#888;margin-bottom:18px;text-align:center;">パスフレーズを入力してください</div>' +
       '<div id="vlk-field"></div>' +
-      '<button id="vlk-ok" style="width:100%;height:36px;border-radius:7px;border:none;background:#1a5c34;color:#fff;cursor:pointer;font-size:13px;font-family:Ubuntu,sans-serif;margin-top:4px;">開く</button>' +
+      '<button id="vlk-ok" style="width:100%;height:36px;border-radius:7px;border:none;background:#1a5c34;color:#fff;cursor:pointer;font-size:13px;font-family:Ubuntu,sans-serif;margin-top:4px;">ロック解除</button>' +
       '<div id="vlk-err" style="margin-top:10px;font-size:12px;color:#f66;min-height:16px;text-align:center;"></div>';
     ov.appendChild(card);
     document.body.appendChild(ov);
@@ -523,7 +637,7 @@ function runBootAnimation() {
   }, 2600);
 }
 
-/* ── アドレスバー＆タブタイトル常時反映ポーリング ── */
+/* ── ★ アドレスバー＆タブタイトル常時反映ポーリング ── */
 function startUrlPolling() {
   setInterval(function() {
     var tab = tabs.find(function(t){ return t.id === activeTabId; });
@@ -533,10 +647,18 @@ function startUrlPolling() {
       var loc = cw.location.href;
       var ttl = cw.document.title;
 
-      /* URL変化を検知 → アドレスバーに反映 */
+      /* ★ URL変化を検知 → アドレスバーに即座反映 */
       if (loc && loc !== 'about:blank' && loc !== tab.url) {
         tab.url = loc;
         document.getElementById('urlInput').value = loc;
+        
+        // 自動タイトル検出
+        var autoName = autoDetectSiteName(loc);
+        if (!tab.displayTitle || tab.displayTitle === autoName) {
+          tab.tabEl.querySelector('.tab-title').textContent = autoName;
+          document.title = autoName;
+        }
+        
         saveTabSession();
 
         /* ファビコン更新 */
@@ -547,12 +669,12 @@ function startUrlPolling() {
             favImg.className = 'tab-favicon';
             tab.tabEl.insertBefore(favImg, tab.tabEl.querySelector('.tab-title'));
           }
-          favImg.src = 'https://www.google.com/s2/favicons?sz=32&domain=' + new URL(loc).hostname;
+          favImg.src = autoDetectFavicon(loc);
         } catch(e2){}
       }
 
-      /* タブタイトルを常時サイト名で更新 */
-      if (ttl && ttl.trim() && ttl !== tab.lastTitle) {
+      /* タブタイトルをサイト名で更新（偽装されていない場合） */
+      if (ttl && ttl.trim() && ttl !== tab.lastTitle && !tab.displayTitle) {
         tab.lastTitle = ttl;
         tab.tabEl.querySelector('.tab-title').textContent = ttl;
       }
@@ -662,9 +784,16 @@ document.addEventListener('DOMContentLoaded', function () {
     var url = document.getElementById('urlInput').value.trim();
     if (url) loadUrlToTab(activeTabId, url);
   };
+  
+  // ★ リアルタイムURL反映（入力中も表示）
+  document.getElementById('urlInput').addEventListener('input', function(e) {
+    // 入力中の表示更新（実際のloadは不要）
+  });
+  
   document.getElementById('urlInput').addEventListener('keydown', function (e) {
     if (e.key === 'Enter') document.getElementById('goButton').click();
   });
+  
   document.getElementById('refreshButton').onclick = function () {
     var tab = tabs.find(function (t) { return t.id === activeTabId; });
     if (tab && tab.url) tab.frameEl.src = tab.frameEl.src;
@@ -674,11 +803,9 @@ document.addEventListener('DOMContentLoaded', function () {
     document.getElementById('toolPopup').classList.remove('open');
   };
 
-  /* ★ 変更点: 外部URLではなく履歴オーバーレイを表示 */
   document.getElementById('historyButton').onclick = function () {
     showHistoryOverlay();
   };
-  /* 閉じるボタン */
   document.getElementById('historyCloseBtn').onclick = function () {
     hideHistoryOverlay();
   };
@@ -773,4 +900,35 @@ document.addEventListener('DOMContentLoaded', function () {
 
   /* ブックマークを確実に描画 */
   renderFavs();
+  
+  /* ★ 教育テンプレートボタン生成 */
+  setupEducationTemplates();
 });
+
+/* ★ 教育テンプレート初期化 */
+function setupEducationTemplates() {
+  var container = document.querySelector('div[style*="flex-wrap"]');
+  if (!container) return;
+  
+  // 既存ボタンをクリア
+  container.innerHTML = '';
+  
+  // テンプレートボタンを追加
+  Object.keys(EDUCATION_TEMPLATES).forEach(function(site) {
+    var btn = document.createElement('button');
+    btn.textContent = site;
+    btn.style.cssText = 'font-size:11px;padding:3px 8px;border-radius:4px;border:1px solid #555;background:#2a2a2a;color:#aaa;cursor:pointer;transition:all 0.2s;';
+    btn.onclick = function() {
+      applyDisguiseTemplate(site, EDUCATION_TEMPLATES[site]);
+    };
+    btn.addEventListener('mouseover', function() {
+      btn.style.background = '#333';
+      btn.style.color = '#fff';
+    });
+    btn.addEventListener('mouseout', function() {
+      btn.style.background = '#2a2a2a';
+      btn.style.color = '#aaa';
+    });
+    container.appendChild(btn);
+  });
+}
