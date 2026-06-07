@@ -1,198 +1,517 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>カスタム時計</title>
-<style>
-  :root{
-    --clock-color: #ffffff;
-    --clock-size: 12vw; /* 画面に応じて大きさを調整 */
-    --colon-bg: url("https://o-i-shi.com/wp-content/uploads/2025/05/greenblack-18.jpg");
-  }
-
-  html,body{
-    height:100%;
-    margin:0;
-  }
-
-  body{
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    background-color:#000;
-    font-family: "Helvetica Neue", Arial, sans-serif;
-    color:var(--clock-color);
-    overflow:hidden;
-  }
-
-  /* 背景スライド用コンテナ */
-  .bg{
-    position:fixed;
-    inset:0;
-    z-index:-2;
-    background-size:cover;
-    background-position:center;
-    transition:opacity 1s ease;
-  }
-  .bg.fade-out{ opacity:0; }
-  .bg.fade-in{ opacity:1; }
-
-  /* 半透明オーバーレイで読みやすく */
-  .overlay{
-    position:fixed;
-    inset:0;
-    background: rgba(0,0,0,0.25);
-    z-index:-1;
-    pointer-events:none;
-  }
-
-  /* 時計本体 */
-  .clock{
-    display:flex;
-    align-items:center;
-    gap:0.5vw;
-    font-weight:600;
-    font-size:var(--clock-size);
-    line-height:1;
-    text-shadow: 0 2px 10px rgba(0,0,0,0.6);
-  }
-
-  .digits{
-    display:flex;
-    gap:0.4vw;
-    align-items:center;
-  }
-
-  .digits span{
-    display:inline-block;
-    min-width: calc(var(--clock-size) * 0.6);
-    text-align:center;
-    color:var(--clock-color);
-  }
-
-  /* コロンを装飾。背景画像を当て、点滅アニメは「長く点灯して短く消える」 */
-  .colon{
-    display:inline-block;
-    padding:0.1em 0.35em;
-    border-radius:0.2em;
-    color:var(--clock-color);
-    background-image: var(--colon-bg);
-    background-size:cover;
-    background-position:center;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.6) inset;
-    -webkit-background-clip: padding-box;
-    animation: colon-blink 1s steps(1) infinite;
-    font-weight:700;
-  }
-
-  /* 70% 表示 / 30% 消灯 の周期（待たせる） */
-  @keyframes colon-blink{
-    0%   { opacity:1; }
-    70%  { opacity:1; }
-    100% { opacity:0; }
-  }
-
-  /* 日付表示（必要なら） */
-  .date{
-    margin-top:1rem;
-    font-size: calc(var(--clock-size) * 0.14);
-    color: rgba(255,255,255,0.9);
-    text-align:center;
-  }
-
-  /* 小さい画面向け調整 */
-  @media (max-width:600px){
-    :root{ --clock-size: 18vw; }
-    .digits span{ min-width: calc(var(--clock-size) * 0.55); }
-  }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Untraceable Browser</title>
+  <link rel="icon" href="https://aicreation-file.miricanvas.com/a00/production/private/txt2img/2026/05/23/14/cf83ba53-7234-47e7-9fc4-5e638a88062b.png">
+  <link href="https://fonts.googleapis.com/css2?family=Ubuntu:wght@300&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400..900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700&family=M+PLUS+Rounded+1c:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div id="bg1" class="bg fade-in"></div>
-  <div id="bg2" class="bg fade-out"></div>
-  <div class="overlay"></div>
 
-  <div>
-    <div class="clock" aria-live="polite">
-      <div class="digits">
-        <span id="hours">00</span>
-        <span class="colon" aria-hidden="true">:</span>
-        <span id="minutes">00</span>
+<!-- 起動アニメーション -->
+<div id="bootOverlay">
+  <div id="bootLines">
+    <div class="boot-line" id="bl0">&gt; Initializing Secure Session...</div>
+    <div class="boot-line" id="bl1">&gt; Loading encryption modules...<span class="boot-ok" id="bl1ok"></span></div>
+    <div class="boot-line" id="bl2">&gt; Bypassing history tracking...<span class="boot-ok" id="bl2ok"></span></div>
+    <div class="boot-line" id="bl3">&gt; Mounting sandbox environment...<span class="boot-ok" id="bl3ok"></span></div>
+    <div class="boot-line" id="bl4">&gt; Done.<span class="boot-ok" id="bl4ok"></span></div>
+  </div>
+  <div id="bootBar"><div id="bootBarFill"></div></div>
+</div>
+
+<!-- ===== 地理ノート偽装オーバーレイ ===== -->
+<div id="disguiseOverlay">
+  <header id="geo-header">
+    <div class="geo-header-inner">
+      <div class="geo-logo">🌏 中2地理まとめ<span class="geo-logo-badge">STUDY</span></div>
+      <nav id="geo-nav">
+        <a href="#" class="geo-active" onclick="geoShowPage('home',this);return false;">ホーム</a>
+        <a href="#" onclick="geoShowPage('asia',this);return false;">アジア</a>
+        <a href="#" onclick="geoShowPage('europe',this);return false;">ヨーロッパ</a>
+        <a href="#" onclick="geoShowPage('africa',this);return false;">アフリカ</a>
+        <a href="#" onclick="geoShowPage('americas',this);return false;">南北アメリカ</a>
+        <a href="#" onclick="geoShowPage('quiz',this);return false;">一問一答</a>
+      </nav>
+    </div>
+  </header>
+  <div class="geo-container">
+
+    <!-- ホーム -->
+    <div id="geo-page-home" class="geo-page geo-active">
+      <div class="geo-hero">
+        <p class="geo-hero-label">中学2年生 社会・地理</p>
+        <h1>世界の<em>地理</em>まとめノート</h1>
+        <p>各地域の自然・産業・文化をわかりやすく整理。テスト直前の確認に使おう！</p>
+        <div class="geo-hero-tags">
+          <span class="geo-hero-tag">📍 アジア州</span><span class="geo-hero-tag">📍 ヨーロッパ州</span>
+          <span class="geo-hero-tag">📍 アフリカ州</span><span class="geo-hero-tag">📍 南北アメリカ</span><span class="geo-hero-tag">📍 オセアニア</span>
+        </div>
       </div>
-      <div style="font-size:0.35em; align-self:flex-end; margin-left:0.8em; color:rgba(255,255,255,0.85);">
-        <span id="seconds" style="font-variant-numeric:tabular-nums;">00</span>
+      <div class="geo-section-title">単元を選ぶ</div>
+      <div class="geo-chapter-grid">
+        <a href="#" class="geo-chapter-card" onclick="geoShowPage('asia',document.querySelector('#geo-nav a:nth-child(2)'));return false;">
+          <div class="geo-card-header"><div class="geo-card-region">CHAPTER 1</div><div class="geo-card-title">アジア州</div><div class="geo-card-sub">東・東南・南・西アジアの特色</div></div>
+          <div class="geo-card-body"><div class="geo-kw-list"><span class="geo-kw red">季節風</span><span class="geo-kw blue">ASEAN</span><span class="geo-kw green">稲作</span><span class="geo-kw red">中国経済</span><span class="geo-kw blue">石油産出</span></div></div>
+        </a>
+        <a href="#" class="geo-chapter-card" onclick="geoShowPage('europe',document.querySelector('#geo-nav a:nth-child(3)'));return false;">
+          <div class="geo-card-header"><div class="geo-card-region">CHAPTER 2</div><div class="geo-card-title">ヨーロッパ州</div><div class="geo-card-sub">EU統合と多様な文化</div></div>
+          <div class="geo-card-body"><div class="geo-kw-list"><span class="geo-kw blue">EU</span><span class="geo-kw green">混合農業</span><span class="geo-kw red">偏西風</span><span class="geo-kw blue">ユーロ</span><span class="geo-kw green">地中海農業</span></div></div>
+        </a>
+        <a href="#" class="geo-chapter-card" onclick="geoShowPage('africa',document.querySelector('#geo-nav a:nth-child(4)'));return false;">
+          <div class="geo-card-header"><div class="geo-card-region">CHAPTER 3</div><div class="geo-card-title">アフリカ州</div><div class="geo-card-sub">植民地の歴史と現在の課題</div></div>
+          <div class="geo-card-body"><div class="geo-kw-list"><span class="geo-kw red">モノカルチャー</span><span class="geo-kw blue">サハラ砂漠</span><span class="geo-kw green">植民地</span><span class="geo-kw red">レアメタル</span></div></div>
+        </a>
+        <a href="#" class="geo-chapter-card" onclick="geoShowPage('americas',document.querySelector('#geo-nav a:nth-child(5)'));return false;">
+          <div class="geo-card-header"><div class="geo-card-region">CHAPTER 4</div><div class="geo-card-title">南北アメリカ州</div><div class="geo-card-sub">多文化社会と大規模農業</div></div>
+          <div class="geo-card-body"><div class="geo-kw-list"><span class="geo-kw blue">NAFTA(USMCA)</span><span class="geo-kw green">適地適作</span><span class="geo-kw red">アマゾン開発</span><span class="geo-kw blue">多文化社会</span></div></div>
+        </a>
+        <a href="#" class="geo-chapter-card" onclick="geoShowPage('quiz',document.querySelector('#geo-nav a:nth-child(6)'));return false;">
+          <div class="geo-card-header"><div class="geo-card-region">PRACTICE</div><div class="geo-card-title">一問一答クイズ</div><div class="geo-card-sub">カードをタップして答えをチェック</div></div>
+          <div class="geo-card-body"><div class="geo-kw-list"><span class="geo-kw red">重要語句</span><span class="geo-kw blue">地名</span><span class="geo-kw green">統計・数値</span></div></div>
+        </a>
+      </div>
+      <div class="geo-content-section">
+        <h2>📌 テストによく出る！世界の基本データ</h2>
+        <table class="geo-table">
+          <thead><tr><th>項目</th><th>数値・内容</th><th>ポイント</th></tr></thead>
+          <tbody>
+            <tr><td>世界の人口</td><td>約<span class="geo-hl">80億人</span></td><td>アジアに約60%が集中</td></tr>
+            <tr><td>世界最大の国（面積）</td><td><span class="geo-hl">ロシア連邦</span></td><td>約1,710万km²（日本の約45倍）</td></tr>
+            <tr><td>世界最多人口の国</td><td><span class="geo-hl">インド</span>（中国を抜いた）</td><td>14億人以上、若い人口が多い</td></tr>
+            <tr><td>赤道が通る大陸</td><td>南アメリカ・アフリカ・アジア</td><td>熱帯雨林気候が広がる</td></tr>
+            <tr><td>本初子午線</td><td>経度<span class="geo-hl">0度</span>（ロンドン）</td><td>グリニッジ天文台を通る</td></tr>
+          </tbody>
+        </table>
       </div>
     </div>
-    <div class="date" id="date"></div>
+
+    <!-- アジア -->
+    <div id="geo-page-asia" class="geo-page">
+      <div class="geo-section-title">アジア州 <span class="geo-section-subtitle">Chapter 1</span></div>
+      <div class="geo-content-section">
+        <div class="geo-tab-nav">
+          <button class="geo-tab-btn geo-active" onclick="geoSwitchTab(this,'geo-asia-tab1')">東アジア</button>
+          <button class="geo-tab-btn" onclick="geoSwitchTab(this,'geo-asia-tab2')">東南アジア</button>
+          <button class="geo-tab-btn" onclick="geoSwitchTab(this,'geo-asia-tab3')">南アジア</button>
+          <button class="geo-tab-btn" onclick="geoSwitchTab(this,'geo-asia-tab4')">西アジア</button>
+        </div>
+        <div id="geo-asia-tab1" class="geo-tab-content geo-active">
+          <div class="geo-point-box"><div class="geo-point-label">🔑 最重要ポイント</div>中国は「世界の工場」から「世界の市場」へ転換。沿岸部と内陸部の<strong>経済格差（地域格差）</strong>が問題。</div>
+          <table class="geo-table"><thead><tr><th>国・地域</th><th>特色</th><th>キーワード</th></tr></thead><tbody>
+            <tr><td><strong>中国</strong></td><td>人口約14億人。経済特区を設けて外国企業を誘致し、急速に経済成長</td><td>経済特区、一人っ子政策（廃止）、漢族</td></tr>
+            <tr><td><strong>韓国</strong></td><td>サムスン・LGなど電子産業が発展。K-POPなどの韓流文化も輸出</td><td>ICT産業、韓流、ハングル</td></tr>
+            <tr><td><strong>日本</strong></td><td>加工貿易で発展。近年は少子高齢化・貿易摩擦が課題</td><td>少子高齢化、加工貿易、技術立国</td></tr>
+          </tbody></table>
+          <div class="geo-map-note"><h3>🗺 東アジアの気候</h3><p>夏に南東の<strong>季節風（モンスーン）</strong>が吹き込み、高温多湿になる。冬は北西の季節風で寒冷・乾燥。稲作には夏の高温多雨が適している。</p></div>
+        </div>
+        <div id="geo-asia-tab2" class="geo-tab-content">
+          <div class="geo-point-box blue"><div class="geo-point-label">🔑 最重要ポイント</div><strong>ASEAN（東南アジア諸国連合）</strong>：10か国が加盟。工業化が進み「ASEAN諸国」は世界の工場に。</div>
+          <table class="geo-table"><thead><tr><th>テーマ</th><th>内容</th></tr></thead><tbody>
+            <tr><td>主な農産物</td><td>米（タイ・ベトナムは世界的輸出国）、天然ゴム、パーム油、コーヒー</td></tr>
+            <tr><td>宗教の分布</td><td>タイ・ミャンマー→仏教、インドネシア・マレーシア→イスラム教、フィリピン→キリスト教</td></tr>
+            <tr><td>工業化</td><td>外国企業の工場誘致→輸出指向型工業。賃金が安く、労働力が豊富</td></tr>
+            <tr><td>熱帯林の開発</td><td>農地・プランテーションへの転換で熱帯林が急減→環境問題</td></tr>
+          </tbody></table>
+        </div>
+        <div id="geo-asia-tab3" class="geo-tab-content">
+          <div class="geo-point-box green"><div class="geo-point-label">🔑 最重要ポイント</div>インドはIT産業で急成長。英語教育と理系人材が豊富で、ICT大国に。</div>
+          <table class="geo-table"><thead><tr><th>国</th><th>特色</th></tr></thead><tbody>
+            <tr><td><strong>インド</strong></td><td>カースト制（身分制度）の残存。BRICSの一員。バンガロールはIT産業の中心地。<br>宗教：ヒンドゥー教が多数、イスラム教も多い</td></tr>
+            <tr><td><strong>バングラデシュ</strong></td><td>デルタ地帯で洪水が多い。縫製業（衣類）が主要産業</td></tr>
+          </tbody></table>
+          <div class="geo-point-box"><div class="geo-point-label">💡 ガンジス川</div>ヒンドゥー教の聖なる川。流域に人口が集中し、農業・生活の場となっている。</div>
+        </div>
+        <div id="geo-asia-tab4" class="geo-tab-content">
+          <div class="geo-point-box"><div class="geo-point-label">🔑 最重要ポイント</div>西アジアは<strong>石油資源</strong>が豊富。OPECに多くの国が加盟し、世界の原油供給を左右する。</div>
+          <table class="geo-table"><thead><tr><th>項目</th><th>内容</th></tr></thead><tbody>
+            <tr><td>主な宗教</td><td>イスラム教（礼拝・断食・聖地メッカへの巡礼）</td></tr>
+            <tr><td>主要国</td><td>サウジアラビア、アラブ首長国連邦（UAE）、イラン、イラク</td></tr>
+            <tr><td>気候</td><td>砂漠気候が多い。乾燥地帯のため農業用水の確保が重要</td></tr>
+            <tr><td>石油収入</td><td>近年は観光・金融など産業の多角化を推進</td></tr>
+          </tbody></table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ヨーロッパ -->
+    <div id="geo-page-europe" class="geo-page">
+      <div class="geo-section-title">ヨーロッパ州 <span class="geo-section-subtitle">Chapter 2</span></div>
+      <div class="geo-content-section">
+        <h2>🇪🇺 EU（ヨーロッパ連合）のしくみ</h2>
+        <div class="geo-point-box blue"><div class="geo-point-label">🔑 最重要ポイント</div>EUは経済・政治的な統合体。共通通貨<strong>ユーロ</strong>を採用（全加盟国ではない）。人・物・お金・サービスが国境を越えて自由に移動できる。</div>
+        <table class="geo-table"><thead><tr><th>項目</th><th>内容</th></tr></thead><tbody>
+          <tr><td>設立の流れ</td><td>EC（ヨーロッパ共同体）→ 1993年にEU発足</td></tr>
+          <tr><td>加盟国数</td><td>27か国（イギリスは2020年に離脱＝Brexit）</td></tr>
+          <tr><td>共通通貨</td><td>ユーロ（€）を採用。ただしスイス・ノルウェーなど非加盟国も</td></tr>
+          <tr><td>課題</td><td>東西ヨーロッパの経済格差、難民・移民問題、各国の主権との摩擦</td></tr>
+        </tbody></table>
+      </div>
+      <div class="geo-content-section">
+        <h2>🌾 ヨーロッパの農業</h2>
+        <div class="geo-flashcard-grid">
+          <div class="geo-flashcard" onclick="this.classList.toggle('geo-open')"><div class="geo-q">混合農業とは？</div><div class="geo-a">穀物栽培と家畜飼育を組み合わせた農業。北フランス・ドイツなど北西部で行われる。</div><span class="geo-tap-hint">タップで確認</span></div>
+          <div class="geo-flashcard" onclick="this.classList.toggle('geo-open')"><div class="geo-q">地中海農業の特色は？</div><div class="geo-a">夏は乾燥→オリーブ・ぶどう・柑橘類。冬は温暖で降水→小麦。スペイン・イタリア・ギリシャが中心。</div><span class="geo-tap-hint">タップで確認</span></div>
+          <div class="geo-flashcard" onclick="this.classList.toggle('geo-open')"><div class="geo-q">酪農が盛んな地域は？</div><div class="geo-a">デンマーク・オランダなど北海沿岸。冷涼な気候で牧草が育ちやすく、乳製品を輸出。</div><span class="geo-tap-hint">タップで確認</span></div>
+          <div class="geo-flashcard" onclick="this.classList.toggle('geo-open')"><div class="geo-q">偏西風の影響は？</div><div class="geo-a">大西洋から吹く偏西風と暖流（北大西洋海流）の影響で、高緯度のわりに温暖。西岸海洋性気候。</div><span class="geo-tap-hint">タップで確認</span></div>
+        </div>
+      </div>
+      <div class="geo-content-section">
+        <h2>🏭 ヨーロッパの工業</h2>
+        <table class="geo-table"><thead><tr><th>地域</th><th>特色</th></tr></thead><tbody>
+          <tr><td>ルール工業地帯（ドイツ）</td><td>石炭・鉄鉱石を使う重工業で発展。現在は機械・化学工業が中心</td></tr>
+          <tr><td>北イタリア</td><td>ミラノ周辺にファッション・機械工業が集中</td></tr>
+          <tr><td>エアバス（EU共同）</td><td>航空機を共同製造。EU統合のシンボル的産業</td></tr>
+        </tbody></table>
+      </div>
+    </div>
+
+    <!-- アフリカ -->
+    <div id="geo-page-africa" class="geo-page">
+      <div class="geo-section-title">アフリカ州 <span class="geo-section-subtitle">Chapter 3</span></div>
+      <div class="geo-content-section">
+        <h2>🌍 アフリカの自然と気候</h2>
+        <div class="geo-map-note"><h3>🗺 気候帯の配列（赤道から北・南へ）</h3><p>赤道付近→<strong>熱帯雨林</strong>（コンゴ盆地）→<strong>サバナ</strong>→<strong>砂漠</strong>（サハラ・ナミブ）→<strong>地中海性気候</strong>（南端・北端）</p></div>
+        <table class="geo-table"><thead><tr><th>地形・地物</th><th>内容</th></tr></thead><tbody>
+          <tr><td>サハラ砂漠</td><td>世界最大の砂漠。アフリカ大陸北部に広がる</td></tr>
+          <tr><td>ナイル川</td><td>世界最長の川。エジプトの農業を支える</td></tr>
+          <tr><td>コンゴ盆地</td><td>世界第2位の熱帯雨林。生物多様性の宝庫</td></tr>
+          <tr><td>キリマンジャロ山</td><td>アフリカ最高峰（5,895m）。タンザニア</td></tr>
+        </tbody></table>
+      </div>
+      <div class="geo-content-section">
+        <h2>📜 植民地支配の歴史と影響</h2>
+        <div class="geo-point-box"><div class="geo-point-label">🔑 最重要ポイント</div>19世紀、ヨーロッパ列強がアフリカをほぼ完全に植民地化。<strong>直線的な国境線</strong>は民族・文化を無視して引かれたため、現在も民族紛争の原因に。</div>
+        <table class="geo-table"><thead><tr><th>問題</th><th>内容</th></tr></thead><tbody>
+          <tr><td>モノカルチャー経済</td><td>特定の農産物・鉱産物だけに依存。価格変動の影響を受けやすい</td></tr>
+          <tr><td>公用語問題</td><td>旧宗主国の言語（英語・フランス語等）が公用語に→民族語の衰退</td></tr>
+          <tr><td>食料問題</td><td>人口増加・干ばつ・内戦で食料不足が続く地域も</td></tr>
+          <tr><td>レアメタル</td><td>コバルト・コルタンなど希少金属が豊富→産地紛争の原因にも</td></tr>
+        </tbody></table>
+        <div class="geo-point-box green"><div class="geo-point-label">📈 近年の変化</div>「アフリカの角」などで携帯電話の普及が急速進展。若い人口と経済成長で「アフリカの時代」とも言われる。</div>
+      </div>
+    </div>
+
+    <!-- 南北アメリカ -->
+    <div id="geo-page-americas" class="geo-page">
+      <div class="geo-section-title">南北アメリカ州 <span class="geo-section-subtitle">Chapter 4</span></div>
+      <div class="geo-content-section">
+        <div class="geo-tab-nav">
+          <button class="geo-tab-btn geo-active" onclick="geoSwitchTab(this,'geo-am-tab1')">北アメリカ</button>
+          <button class="geo-tab-btn" onclick="geoSwitchTab(this,'geo-am-tab2')">南アメリカ</button>
+        </div>
+        <div id="geo-am-tab1" class="geo-tab-content geo-active">
+          <div class="geo-point-box blue"><div class="geo-point-label">🔑 最重要ポイント</div>アメリカの農業は<strong>適地適作</strong>と<strong>企業的農業</strong>が特色。農業地域が気候・地形に合わせてはっきり分かれる。</div>
+          <table class="geo-table"><thead><tr><th>農業地帯</th><th>主要作物</th><th>場所</th></tr></thead><tbody>
+            <tr><td>春小麦地帯</td><td>小麦（春まき）</td><td>カナダ・北部大平原</td></tr>
+            <tr><td>冬小麦地帯</td><td>小麦（秋まき）</td><td>グレートプレーンズ南部</td></tr>
+            <tr><td>とうもろこし地帯</td><td>とうもろこし・大豆</td><td>コーンベルト（五大湖周辺）</td></tr>
+            <tr><td>綿花地帯</td><td>綿花</td><td>コットンベルト（南部）</td></tr>
+            <tr><td>酪農地帯</td><td>乳製品</td><td>五大湖周辺・北東部</td></tr>
+          </tbody></table>
+          <div class="geo-point-box"><div class="geo-point-label">🏭 シリコンバレー</div>カリフォルニア州サンフランシスコ南部。Google・Apple・Meta等のIT企業が集積。世界の技術革新をリード。</div>
+          <table class="geo-table" style="margin-top:14px"><thead><tr><th>項目</th><th>内容</th></tr></thead><tbody>
+            <tr><td>多文化社会</td><td>ヨーロッパ系・アフリカ系・ヒスパニック・アジア系など多様な民族が共存</td></tr>
+            <tr><td>NAFTA→USMCA</td><td>アメリカ・カナダ・メキシコの自由貿易協定。2020年に改定</td></tr>
+          </tbody></table>
+        </div>
+        <div id="geo-am-tab2" class="geo-tab-content">
+          <div class="geo-point-box green"><div class="geo-point-label">🔑 最重要ポイント</div>ブラジルは<strong>バイオエタノール（さとうきび）</strong>生産・大豆輸出で急成長。アマゾンの開発と<strong>熱帯雨林破壊</strong>が深刻な問題。</div>
+          <table class="geo-table"><thead><tr><th>国・地域</th><th>特色</th></tr></thead><tbody>
+            <tr><td><strong>ブラジル</strong></td><td>大豆・コーヒーの輸出大国。多民族社会（ポルトガル系・アフリカ系・日系等）</td></tr>
+            <tr><td><strong>アルゼンチン</strong></td><td>パンパ（大草原）で牛の放牧・小麦栽培が盛ん</td></tr>
+            <tr><td><strong>アンデス山脈</strong></td><td>標高差を利用した農業（高地→ジャガイモ・アルパカ）。インカ文明の地</td></tr>
+          </tbody></table>
+          <div class="geo-map-note" style="margin-top:16px"><h3>🌳 アマゾンの熱帯雨林</h3><p>地球上の酸素の20%を生産する「地球の肺」。農地・牧場・道路開発で急速に減少。温暖化・生物多様性への影響が懸念される。</p></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 一問一答 -->
+    <div id="geo-page-quiz" class="geo-page">
+      <div class="geo-section-title">一問一答 <span class="geo-section-subtitle">カードをタップして答えを確認しよう</span></div>
+      <div class="geo-content-section">
+        <h2>🌏 アジア州</h2>
+        <div class="geo-flashcard-grid">
+          <div class="geo-flashcard" onclick="this.classList.toggle('geo-open')"><div class="geo-q">中国が沿岸部に設けた、外国企業向けの特別な地区は？</div><div class="geo-a">経済特区（シェンジェン・上海など）</div><span class="geo-tap-hint">タップで確認</span></div>
+          <div class="geo-flashcard" onclick="this.classList.toggle('geo-open')"><div class="geo-q">東南アジア10か国が加盟する地域連合の略称は？</div><div class="geo-a">ASEAN（東南アジア諸国連合）</div><span class="geo-tap-hint">タップで確認</span></div>
+          <div class="geo-flashcard" onclick="this.classList.toggle('geo-open')"><div class="geo-q">インドのIT産業の中心都市はどこ？</div><div class="geo-a">バンガロール</div><span class="geo-tap-hint">タップで確認</span></div>
+          <div class="geo-flashcard" onclick="this.classList.toggle('geo-open')"><div class="geo-q">夏に南東から吹く、アジアの気候を特色づける風は？</div><div class="geo-a">季節風（モンスーン）</div><span class="geo-tap-hint">タップで確認</span></div>
+        </div>
+      </div>
+      <div class="geo-content-section">
+        <h2>🇪🇺 ヨーロッパ州</h2>
+        <div class="geo-flashcard-grid">
+          <div class="geo-flashcard" onclick="this.classList.toggle('geo-open')"><div class="geo-q">EUの共通通貨の名前は？</div><div class="geo-a">ユーロ（€）</div><span class="geo-tap-hint">タップで確認</span></div>
+          <div class="geo-flashcard" onclick="this.classList.toggle('geo-open')"><div class="geo-q">イギリスがEUを離脱したことを何という？</div><div class="geo-a">Brexit（ブレグジット）。2020年に正式離脱。</div><span class="geo-tap-hint">タップで確認</span></div>
+          <div class="geo-flashcard" onclick="this.classList.toggle('geo-open')"><div class="geo-q">北西ヨーロッパを温暖にしている大西洋の暖流は？</div><div class="geo-a">北大西洋海流（偏西風の影響とセットで覚える）</div><span class="geo-tap-hint">タップで確認</span></div>
+          <div class="geo-flashcard" onclick="this.classList.toggle('geo-open')"><div class="geo-q">地中海沿岸で夏に栽培されるおもな作物2つは？</div><div class="geo-a">オリーブとぶどう（夏の乾燥に強い）</div><span class="geo-tap-hint">タップで確認</span></div>
+        </div>
+      </div>
+      <div class="geo-content-section">
+        <h2>🌍 アフリカ・南北アメリカ州</h2>
+        <div class="geo-flashcard-grid">
+          <div class="geo-flashcard" onclick="this.classList.toggle('geo-open')"><div class="geo-q">特定の農産物・鉱産物に依存した経済構造を何という？</div><div class="geo-a">モノカルチャー経済（価格変動の影響を受けやすい）</div><span class="geo-tap-hint">タップで確認</span></div>
+          <div class="geo-flashcard" onclick="this.classList.toggle('geo-open')"><div class="geo-q">アメリカで五大湖周辺に広がる農業地帯は？</div><div class="geo-a">コーンベルト（とうもろこし・大豆の産地）</div><span class="geo-tap-hint">タップで確認</span></div>
+          <div class="geo-flashcard" onclick="this.classList.toggle('geo-open')"><div class="geo-q">ブラジルが大量生産する再生可能エネルギー燃料は？</div><div class="geo-a">バイオエタノール（さとうきびから製造）</div><span class="geo-tap-hint">タップで確認</span></div>
+          <div class="geo-flashcard" onclick="this.classList.toggle('geo-open')"><div class="geo-q">アルゼンチンの大草原・農牧業地帯の名称は？</div><div class="geo-a">パンパ（牛の放牧・小麦栽培が盛ん）</div><span class="geo-tap-hint">タップで確認</span></div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /geo-container -->
+  <footer id="geo-footer">
+    <p>📚 中2社会（地理）まとめノート｜定期テスト対策用</p>
+    <p style="margin-top:6px">カードをタップして答えを確認しよう。各単元のページでさらに詳しく学べます。</p>
+  </footer>
+</div><!-- /disguiseOverlay -->
+
+<!-- 偽装中ヒント -->
+<div id="disguiseHint">Shift+Esc で戻る</div>
+
+<!-- スクリーンセーバー -->
+<div id="screensaver">
+  <div id="ssClock">00:00</div>
+  <div id="ssDate"></div>
+  <div id="ssHint">クリックまたはキーを押して復帰</div>
+</div>
+
+<!-- ===== アップデート履歴オーバーレイ ===== -->
+<div id="historyOverlay">
+  <div id="historyOverlayInner">
+    <button id="historyCloseBtn">✕ 閉じる</button>
+    <div class="sidebar-hist">
+      <h2>目次</h2>
+      <a href="#hist-history">アップデート履歴</a>
+      <a href="#hist-bugs">既知のバグ</a>
+    </div>
+    <div class="hist-main-content">
+      <div class="hist-header-container">
+        <img src="https://aicreation-file.miricanvas.com/a00/production/private/txt2img/2026/05/23/14/cf83ba53-7234-47e7-9fc4-5e638a88062b.png" alt="Logo" class="hist-logo">
+        <h1 class="hist-title-text">Untraceable Browser</h1>
+      </div>
+      <h2 id="hist-history">アップデート情報</h2>
+      <div class="hist-update-section">
+        <p class="hist-version">Ver.1.2.8 2026/05/27</p>
+        <ul>
+          <li>ページ偽装機能を追加しました。該当ボタンで起動可。また、Shift+escキーで閉じる。</li>
+          <li>30秒操作していない状態でスクリーンセーバーを起動する機能を追加。</li>
+          <li>覗き見防止モードを追加しました。</li>
+          <li>緊急脱出を削除しました。</li>
+          <li>左上アイコンをタップでHOMEに戻れます。</li>
+          <li>メモ機能の追加</li>
+          <li>複数タブに対応しました。</li>
+          <li>背景、「サイバーグリーン」を追加しました。</li>
+          <li>RAM/FPSモニターを追加しました。</li>
+          <li>タブバーにファビコン対応にしました。</li>
+          <li>Ctrl+Tで新規タブ。iframeにフォーカスが当たっている場合は機能しません。</li>
+        </ul>
+      </div>
+      <div class="hist-update-section">
+        <p class="hist-version">Ver.1.2.0 2026/05/25</p>
+        <ul>
+          <li>画面右上にアイコン表示を追加しました。</li>
+          <li>アップデート履歴を"アップデート情報・バグ"に変更しました。</li>
+          <li>メニューボタンを追加しました。</li>
+          <li>メニューに軽量プロキシ、GUSTを追加しました。新規タブで開きます。</li>
+        </ul>
+      </div>
+      <div class="hist-update-section">
+        <p class="hist-version">Ver.1.1.5 2026/05/24</p>
+        <ul>
+          <li>サイドバーを追加しました。</li>
+          <li>サイドバーにお気に入り機能を追加しました（下部の＋ボタンでお気に入り登録可能）。</li>
+          <li>緊急脱出機能を追加。テキストボックス未選択時に「q」キーを押すとWikipediaへ移動し、他者に画面を見られるリスクを軽減します。</li>
+        </ul>
+      </div>
+      <div class="hist-update-section">
+        <p class="hist-version">Ver.1.1.4 2026/05/24</p>
+        <ul>
+          <li>サイドバーを追加しました。</li>
+          <li>サイドバーにお気に入り機能を追加しました（下部の＋ボタンでお気に入り登録可能）。</li>
+          <li>緊急脱出機能を追加。テキストボックス未選択時に「q」キーを押すとWikipediaへ移動し、他者に画面を見られるリスクを軽減します。</li>
+        </ul>
+      </div>
+      <div class="hist-update-section">
+        <p class="hist-version">Ver.1.1.3 2026/05/24</p>
+        <ul>
+          <li>背景選択メニューに「秋の富士山」と「ノイシュヴァンシュタイン城」を追加しました。</li>
+          <li>時刻表示機能を追加しました。</li>
+          <li>ブラウザアイコン（ファビコン）を専用デザインに変更しました。</li>
+          <li>UIフォントを「Ubuntu」に統一し、デザインの一貫性を強化しました。</li>
+          <li>アップデート履歴ボタン、ページを追加。</li>
+        </ul>
+      </div>
+      <div class="hist-update-section">
+        <p class="hist-version">Ver.1.1.2 2026/05/24</p>
+        <ul>
+          <li>背景選択メニューに「札幌 大通公園の夜景」、「日本アルプスの山々」を追加しました。</li>
+          <li>再読み込み機能を追加しました。</li>
+          <li>履歴を残さないセッションリセット機能の実装。</li>
+          <li>戻るボタンを削除しました。</li>
+        </ul>
+      </div>
+      <div class="hist-update-section">
+        <p class="hist-version">Ver.1.1.1 2026/05/23</p>
+        <ul>
+          <li>背景機能を追加しました。</li>
+          <li>戻るボタンを追加。</li>
+          <li>UIを調節しました。</li>
+        </ul>
+      </div>
+      <div class="hist-update-section">
+        <p class="hist-version">Ver.1.1.0 2026/05/22</p>
+        <ul>
+          <li>UI調整、ホームの追加をして正式版公開。</li>
+        </ul>
+      </div>
+      <div class="hist-update-section">
+        <p class="hist-version">Ver.1.0.0 β 2026/05/22</p>
+        <ul>
+          <li>iframeを活用した最低限のブラウジング機能を搭載したβ版公開。</li>
+        </ul>
+      </div>
+      <h2 id="hist-bugs" style="margin-top:40px;">既知のバグ・制限事項</h2>
+      <div class="hist-bug-section">
+        <ul>
+          <li><strong>X-Frame-Options制限:</strong> 一部のWebサイト（Google検索結果やSNS等）は、セキュリティ設定によりiframe内での表示がブロックされる可能性があります。</li>
+          <li><strong>偽装ページが表示されない可能性:</strong> フォーカスがiframeに移されている場合、偽装ページが機能しない可能性があります。</li>
+          <li><strong>フォーカス追従:</strong> iframe内から親ページへフォーカスを戻した際、一部の環境でスクロール位置がリセットされる場合があります。</li>
+        </ul>
+      </div>
+      <div class="hist-footer">
+        &copy; 2026 Untraceable Browser Project<br>
+        連絡先: off_mix@proton.me
+      </div>
+    </div>
   </div>
+</div>
 
-<script>
-  // 画像はユーザー提示のURLをそのまま使っています。
-  const backgrounds = [
-    "https://cdn.pixabay.com/photo/2017/03/28/12/22/snow-mountain-2182016_640.jpg", // 日本アルプス
-    "https://www.sapporo.travel/cms/wp-content/uploads/2017/06/%E5%A4%A7%E9%80%9A%E5%85%AC%E5%9C%92_%E9%A6%AC%E6%B8%95%E7%BF%94%E6%A7%98_%E2%98%85DSC08415ps-5-1.jpg", // 札幌大通公園
-    "https://upload.wikimedia.org/wikipedia/commons/c/c2/2018_Shibuya_Crossing.jpg" // 渋谷スクランブル交差点
-  ];
+<div id="privacyStatus">待機中</div>
+<div id="fpsDisplay">-- FPS</div>
+<div id="darkVeil"></div>
+<div id="favBar"></div>
 
-  // 背景を交互に切り替えるロジック（フェード）
-  const bg1 = document.getElementById("bg1");
-  const bg2 = document.getElementById("bg2");
-  let idx = 0;
-  let showing = 1;
+<!-- タブバー -->
+<div class="tabbar" id="tabbar">
+  <div id="addTabBtn" title="新しいタブ">＋</div>
+</div>
 
-  function setBg(el, url){
-    el.style.backgroundImage = `url("${url}")`;
-  }
+<!-- 背景メニュー -->
+<div id="bgMenu">
+  <div class="bg-option" data-bg="https://custom-images.strikinglycdn.com/res/hrscywv4p/image/upload/c_limit,fl_lossy,h_9000,w_1200,f_auto,q_auto/8103728/282569_954041.jpeg">🌊 デフォルト</div>
+  <div class="bg-option" data-bg="https://upload.wikimedia.org/wikipedia/commons/thumb/1/1b/Ginza_line_Shibuya_201309.jpg/1280px-Ginza_line_Shibuya_201309.jpg">🗼 渋谷</div>
+  <div class="bg-option" data-bg="https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Odori_Park_Sapporo_autumn.jpg/1280px-Odori_Park_Sapporo_autumn.jpg">🌃 札幌 大通公園の夜景</div>
+  <div class="bg-option" data-bg="https://upload.wikimedia.org/wikipedia/commons/thumb/5/5f/Mount_Fuji_from_Hotel_Mt.Fuji_2011-10-27.jpg/1280px-Mount_Fuji_from_Hotel_Mt.Fuji_2011-10-27.jpg">🍂 秋の富士山</div>
+  <div class="bg-option" data-bg="https://upload.wikimedia.org/wikipedia/commons/thumb/f/f8/Neuschwanstein_Castle_from_Marienbrücke.jpg/1280px-Neuschwanstein_Castle_from_Marienbrücke.jpg">🏰 ノイシュヴァンシュタイン城</div>
+  <div class="bg-option" data-bg="https://upload.wikimedia.org/wikipedia/commons/thumb/3/3e/Karakoram_from_Gondogoro_La.jpg/1280px-Karakoram_from_Gondogoro_La.jpg">⛰ 日本アルプスの山々</div>
+  <div class="bg-option" data-bg="linear-gradient(135deg,#001a00,#003300,#00ff41,#001a00)" data-type="gradient">💚 サイバーグリーン</div>
+  <div class="bg-option" data-bg="https://o-i-shi.com/wp-content/uploads/2025/05/greenblack-18.jpg">サイバーグリーン</div>
+  <div class="bg-option" data-bg="">⬛ なし（黒）</div>
+</div>
 
-  // 初期背景
-  setBg(bg1, backgrounds[0]);
-  setBg(bg2, backgrounds[1] || backgrounds[0]);
-  idx = 1;
+<!-- ツールポップアップ -->
+<div id="toolPopup">
+  <p style="font-size:15px;margin-bottom:10px;">🔧 メニュー</p>
+  <button id="gustBtn" onclick="window.open('https://gust.vercel.app','_blank')">🌪️ GUST</button>
+  <p style="font-size:11px;color:#888;margin-top:4px;">超軽量な強力プロキシ</p>
+  <hr>
+  <p style="font-size:15px;margin-bottom:10px;">⚙️ 設定</p>
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+    <span style="color:#aaa;font-size:12px;">🔐 ロック機能</span>
+    <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+      <span id="lockToggleLabel" style="font-size:11px;color:#888;">無効</span>
+      <div id="lockToggleWrap" onclick="toggleLockSetting()" style="width:36px;height:20px;border-radius:10px;background:#333;border:1px solid #555;position:relative;cursor:pointer;transition:background 0.2s;">
+        <div id="lockToggleThumb" style="position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:#888;transition:all 0.2s;"></div>
+      </div>
+    </label>
+  </div>
+  <hr style="margin:4px 0 10px;">
+  <p style="margin-bottom:6px;color:#aaa;font-size:12px;">タブ名・ファビコン偽装</p>
+  <div style="display:flex;flex-direction:column;gap:6px;">
+    <input type="text" id="disguiseTitleInput" placeholder="タブ名（例：Google）" style="width:100%;height:28px;padding:0 8px;border-radius:5px;border:1px solid #555;background:#222;color:#fff;font-size:12px;outline:none;box-sizing:border-box;">
+    <input type="text" id="disguiseFaviconInput" placeholder="ファビコンURL（例：https://...）" style="width:100%;height:28px;padding:0 8px;border-radius:5px;border:1px solid #555;background:#222;color:#fff;font-size:12px;outline:none;box-sizing:border-box;">
+    <p style="color:#666;font-size:11px;margin:0;">テンプレート：</p>
+    <div style="display:flex;flex-wrap:wrap;gap:4px;">
+      <button onclick="applyDisguiseTemplate('Google','https://www.google.com/favicon.ico')" style="font-size:11px;padding:3px 8px;border-radius:4px;border:1px solid #555;background:#2a2a2a;color:#ccc;cursor:pointer;">Google</button>
+      <button onclick="applyDisguiseTemplate('YouTube','https://www.youtube.com/favicon.ico')" style="font-size:11px;padding:3px 8px;border-radius:4px;border:1px solid #555;background:#2a2a2a;color:#ccc;cursor:pointer;">YouTube</button>
+      <button onclick="applyDisguiseTemplate('Wikipedia','https://www.wikipedia.org/favicon.ico')" style="font-size:11px;padding:3px 8px;border-radius:4px;border:1px solid #555;background:#2a2a2a;color:#ccc;cursor:pointer;">Wikipedia</button>
+      <button onclick="applyDisguiseTemplate('Twitter','https://twitter.com/favicon.ico')" style="font-size:11px;padding:3px 8px;border-radius:4px;border:1px solid #555;background:#2a2a2a;color:#ccc;cursor:pointer;">Twitter</button>
+      <button onclick="applyDisguiseTemplate('Amazon','https://www.amazon.co.jp/favicon.ico')" style="font-size:11px;padding:3px 8px;border-radius:4px;border:1px solid #555;background:#2a2a2a;color:#ccc;cursor:pointer;">Amazon</button>
+      <button onclick="applyDisguiseTemplate('Microsoft','https://www.microsoft.com/favicon.ico')" style="font-size:11px;padding:3px 8px;border-radius:4px;border:1px solid #555;background:#2a2a2a;color:#ccc;cursor:pointer;">Microsoft</button>
+    </div>
+    <button onclick="applyDisguise()" style="height:28px;border-radius:5px;border:none;background:#444;color:#fff;cursor:pointer;font-size:12px;font-family:Ubuntu,sans-serif;">適用</button>
+  </div>
+  <hr style="margin:10px 0;">
+  <button id="fullscreenBtn" style="width:100%;height:32px;border-radius:5px;border:1px solid #555;background:transparent;color:#ccc;cursor:pointer;font-size:12px;font-family:Ubuntu,sans-serif;">⛶ フルスクリーン</button>
+</div>
 
-  function nextBackground(){
-    const nextIndex = (idx + 1) % backgrounds.length;
-    if(showing === 1){
-      setBg(bg2, backgrounds[nextIndex]);
-      bg2.classList.remove("fade-out");
-      bg2.classList.add("fade-in");
-      bg1.classList.remove("fade-in");
-      bg1.classList.add("fade-out");
-      showing = 2;
-    } else {
-      setBg(bg1, backgrounds[nextIndex]);
-      bg1.classList.remove("fade-out");
-      bg1.classList.add("fade-in");
-      bg2.classList.remove("fade-in");
-      bg2.classList.add("fade-out");
-      showing = 1;
-    }
-    idx = nextIndex;
-  }
+<!-- ナビバー -->
+<div class="navbar">
+  <img id="logoImg" src="https://cdn.phototourl.com/free/2026-05-27-4d659095-dd46-430b-af9f-a5d9e74d9b22.png" alt="Logo" title="ホームに戻る">
+  <div id="clock"></div>
+  <button class="nbtn" id="refreshButton" style="font-size:20px;width:48px;">↻</button>
+  <input type="text" id="urlInput" placeholder="URLまたは検索語句を入力してください...">
+  <button class="nbtn" id="goButton" style="font-size:15px;padding:0 20px;">GO</button>
+  <button class="nbtn icon-btn" id="bgButton" title="背景変更"><img src="https://cdn.phototourl.com/free/2026-06-01-110335f7-0313-48c0-acf1-b105d08e9b87.png" class="nav-icon"></button>
+  <button class="nbtn icon-btn" id="historyButton" title="更新情報"><img src="https://cdn.phototourl.com/free/2026-06-01-60ab0fca-bff4-4c59-b3af-7661b1a40a1c.png" class="nav-icon"></button>
+  <button class="nbtn icon-btn" id="resetButton" title="終了"><img src="https://cdn.phototourl.com/free/2026-06-01-128fbbac-d760-4868-b79e-53dabf56bfcc.png" class="nav-icon"></button>
+  <button id="panicBtn" class="icon-btn" title="偽装"><img src="https://cdn.phototourl.com/free/2026-06-01-1220b0e3-5a62-422e-be44-fa53dd0851ec.png" class="nav-icon"></button>
+  <button id="filterBtn" class="icon-btn" title="覗き見防止"><img src="https://cdn.phototourl.com/free/2026-06-01-c71de68e-f4ac-4c8f-88d5-96528d3b3437.png" class="nav-icon"></button>
+  <button class="nbtn" id="memoToggleBtn" style="font-size:14px;padding:0 16px;">メモ</button>
+  <button class="nbtn" id="menuButton" style="font-size:22px;width:48px;">≡</button>
+</div>
 
-  // 7秒ごとに背景切り替え（調整可）
-  setInterval(nextBackground, 7000);
+<div id="mainContent">
+  <div id="loadingOverlay">
+    <div class="load-spinner"></div>
+    <div class="load-label">読み込み中...</div>
+  </div>
+  <div id="messageArea">
+    <p style="font-size:42px;">Untraceable Browser</p>
+    <p style="font-size:120%;margin-top:10px;">URLを入力して GO または Enter</p>
+    <p style="margin-top:8px;opacity:0.6;font-size:13px;">iframeベース・ブラウザ履歴なし</p>
+    <br><p style="font-size:11px;opacity:0.4;">Ver.1.2.8</p>
+  </div>
+</div>
 
-  // 時計更新（時・分・秒）
-  function pad(n){ return n.toString().padStart(2,"0"); }
-  const hoursEl = document.getElementById("hours");
-  const minutesEl = document.getElementById("minutes");
-  const secondsEl = document.getElementById("seconds");
-  const dateEl = document.getElementById("date");
+<!-- メモパネル -->
+<div id="memoPanel">
+  <div id="memoHeader">
+    <div id="memoHeaderLeft"><span id="memoTitle">📝 メモ</span><span id="memoSaveStatus">未保存</span></div>
+    <button id="memoCloseBtn">×</button>
+  </div>
+  <div id="memoToolbar">
+    <label>色：</label>
+    <div class="color-swatch" style="background:#ffffff" data-color="#ffffff"></div>
+    <div class="color-swatch" style="background:#ffeb3b" data-color="#ffeb3b"></div>
+    <div class="color-swatch" style="background:#ff7043" data-color="#ff7043"></div>
+    <div class="color-swatch" style="background:#ef5350" data-color="#ef5350"></div>
+    <div class="color-swatch" style="background:#66bb6a" data-color="#66bb6a"></div>
+    <div class="color-swatch" style="background:#42a5f5" data-color="#42a5f5"></div>
+    <div class="color-swatch" style="background:#ce93d8" data-color="#ce93d8"></div>
+    <input type="color" id="colorPicker" value="#ffffff">
+    <label style="margin-left:4px;">サイズ：</label>
+    <select id="fontSizeSelect">
+      <option value="11px">11</option><option value="12px">12</option><option value="13px">13</option>
+      <option value="14px" selected>14</option><option value="16px">16</option><option value="18px">18</option>
+      <option value="20px">20</option><option value="24px">24</option><option value="28px">28</option><option value="32px">32</option>
+    </select>
+  </div>
+  <div id="memoBody" contenteditable="true" spellcheck="false"></div>
+  <div id="memoFooter">
+    <button id="memoClearBtn">クリア</button>
+    <span id="memoCharCount">0 文字</span>
+    <button id="memoSaveBtn">💾 保存</button>
+  </div>
+</div>
 
-  function updateClock(){
-    const now = new Date();
-    hoursEl.textContent = pad(now.getHours());
-    minutesEl.textContent = pad(now.getMinutes());
-    secondsEl.textContent = pad(now.getSeconds());
-    const jpWeek = ["日","月","火","水","木","金","土"];
-    dateEl.textContent = `${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日（${jpWeek[now.getDay()]}）`;
-  }
-
-  updateClock();
-  setInterval(updateClock, 1000);
-
-  // もし「渋谷に秋の富士山を重ねる」合成を行いたい場合は、富士山の画像URLを教えてください。
-</script>
+<script src="code.js"></script>
 </body>
 </html>
