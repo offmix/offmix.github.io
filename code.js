@@ -97,49 +97,50 @@ function autoDetectFavicon(url) {
   }
 }
 
-// ★ ダークモード自動適用
-function applyDarkModeIfAvailable(frame) {
+// ★ ダークモード強制適用（全サイトに対応）
+function applyDarkModeForced(frame) {
   try {
     if (!frame || !frame.contentDocument) return;
     
     const doc = frame.contentDocument;
-    const win = frame.contentWindow;
     
-    // metaタグでダークモード対応を確認
-    const colorScheme = doc.querySelector('meta[name="color-scheme"]');
-    if (colorScheme && colorScheme.content.includes('dark')) {
-      doc.documentElement.setAttribute('data-theme', 'dark');
-      doc.documentElement.style.colorScheme = 'dark';
-    }
+    // スタイルを挿入（既存を削除してから）
+    let style = doc.getElementById('dark-mode-forced-override');
+    if (style) style.remove();
     
-    // prefers-color-scheme に対応
-    if (win.matchMedia && win.matchMedia('(prefers-color-scheme: dark)').matches) {
-      doc.documentElement.style.colorScheme = 'dark';
-      
-      const style = doc.createElement('style');
-      style.id = 'dark-mode-override';
-      style.textContent = `
-        @media (prefers-color-scheme: dark) {
-          :root { color-scheme: dark !important; }
-          html { color-scheme: dark !important; }
-          body { background-color: #1a1a1a !important; color: #ffffff !important; }
-        }
-        html[data-theme="dark"],
-        html[data-color-mode="dark"],
-        body.dark,
-        body.dark-mode {
-          background-color: #1a1a1a !important;
-          color: #ffffff !important;
-        }
-      `;
-      
-      // 既存のダークモードスタイルを削除してから追加
-      const existing = doc.getElementById('dark-mode-override');
-      if (existing) existing.remove();
-      doc.head.appendChild(style);
+    style = doc.createElement('style');
+    style.id = 'dark-mode-forced-override';
+    style.textContent = `
+      * { color-scheme: dark !important; }
+      :root, html, body { 
+        background-color: #1a1a1a !important; 
+        color: #ffffff !important;
+        color-scheme: dark !important;
+      }
+      body, div, p, span, a, button, input, select, textarea {
+        background-color: #1a1a1a !important;
+        color: #ffffff !important;
+      }
+      a { color: #64b5f6 !important; }
+      button { background-color: #333333 !important; color: #ffffff !important; border-color: #555555 !important; }
+      input, textarea, select { background-color: #222222 !important; color: #ffffff !important; border-color: #444444 !important; }
+      img { opacity: 0.9; }
+    `;
+    
+    doc.head.appendChild(style);
+    
+    // メタタグも設定
+    let colorSchemeMeta = doc.querySelector('meta[name="color-scheme"]');
+    if (colorSchemeMeta) {
+      colorSchemeMeta.setAttribute('content', 'dark');
+    } else {
+      colorSchemeMeta = doc.createElement('meta');
+      colorSchemeMeta.name = 'color-scheme';
+      colorSchemeMeta.content = 'dark';
+      doc.head.appendChild(colorSchemeMeta);
     }
   } catch (e) {
-    // クロスオリジン制限やその他のエラーは無視
+    // クロスオリジン制限は無視
   }
 }
 
@@ -178,7 +179,7 @@ function createTab(url) {
   frame.sandbox = 'allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-presentation';
   document.getElementById('mainContent').appendChild(frame);
 
-  var tab = { id:id, url: url||'', frameEl: frame, tabEl: tabEl, displayTitle: '' };
+  var tab = { id:id, url: url||'', frameEl: frame, tabEl: tabEl, displayTitle: '', isDisguised: false };
   tabs.push(tab);
 
   tabEl.addEventListener('click', function(e){
@@ -230,11 +231,12 @@ function loadUrlToTab(id, raw) {
   }
   tab.url = url;
   
-  // ★ 自動タブ名検出
-  var detectedName = autoDetectSiteName(url);
-  tab.displayTitle = detectedName;
-  tab.tabEl.querySelector('.tab-title').textContent = detectedName;
-  document.title = detectedName;
+  // ★ 自動タブ名検出（仮想ブラウザタブのみ変更）
+  if (!tab.isDisguised) {
+    var detectedName = autoDetectSiteName(url);
+    tab.displayTitle = detectedName;
+    tab.tabEl.querySelector('.tab-title').textContent = detectedName;
+  }
   
   // ★ URLをアドレスバーに即座反映
   document.getElementById('urlInput').value = url;
@@ -244,8 +246,8 @@ function loadUrlToTab(id, raw) {
   lo.classList.add('active');
   tab.frameEl.onload = function(){ 
     lo.classList.remove('active'); 
-    // ★ ページロード後にダークモード適用
-    applyDarkModeIfAvailable(tab.frameEl);
+    // ★ ページロード後にダークモード強制適用
+    applyDarkModeForced(tab.frameEl);
   };
   tab.frameEl.src = url;
   
@@ -427,7 +429,7 @@ function toggleFullscreen() {
   else document.exitFullscreen();
 }
 
-/* ── ★ タブ名・ファビコン偽装適用（教育テンプレート拡充） ── */
+/* ── ★ タブ名・ファビコン偽装適用（仮想ブラウザのタブのみ変更） ── */
 function applyDisguise() {
   var title   = (document.getElementById('disguiseTitleInput').value  || '').trim();
   var favicon = (document.getElementById('disguiseFaviconInput').value || '').trim();
@@ -435,8 +437,9 @@ function applyDisguise() {
   
   if (title && tab) {
     tab.displayTitle = title;
-    document.title = title;
+    tab.isDisguised = true;
     tab.tabEl.querySelector('.tab-title').textContent = title;
+    // ★ 重要：実タブ名は変更しない
   }
   if (favicon) setFavicon(favicon);
   document.getElementById('toolPopup').classList.remove('open');
@@ -687,7 +690,7 @@ function runBootAnimation() {
   }, 2600);
 }
 
-/* ── ★ アドレスバー＆タブタイトル常時反映ポーリング ── */
+/* ── ★ URL監視ポーリング（アドレスバー＆ダークモード常時反映） ── */
 function startUrlPolling() {
   setInterval(function() {
     var tab = tabs.find(function(t){ return t.id === activeTabId; });
@@ -695,19 +698,21 @@ function startUrlPolling() {
     try {
       var cw  = tab.frameEl.contentWindow;
       var loc = cw.location.href;
-      var ttl = cw.document.title;
 
       /* ★ URL変化を検知 → アドレスバーに即座反映 */
       if (loc && loc !== 'about:blank' && loc !== tab.url) {
         tab.url = loc;
         document.getElementById('urlInput').value = loc;
         
-        // 自動タイトル検出
-        var autoName = autoDetectSiteName(loc);
-        if (!tab.displayTitle || tab.displayTitle === autoName) {
+        // 仮想タブ名を自動更新（偽装されていない場合）
+        if (!tab.isDisguised) {
+          var autoName = autoDetectSiteName(loc);
+          tab.displayTitle = autoName;
           tab.tabEl.querySelector('.tab-title').textContent = autoName;
-          document.title = autoName;
         }
+        
+        // ダークモード再適用
+        applyDarkModeForced(tab.frameEl);
         
         saveTabSession();
 
@@ -722,14 +727,8 @@ function startUrlPolling() {
           favImg.src = autoDetectFavicon(loc);
         } catch(e2){}
       }
-
-      /* タブタイトルをサイト名で更新（偽装されていない場合） */
-      if (ttl && ttl.trim() && ttl !== tab.lastTitle && !tab.displayTitle) {
-        tab.lastTitle = ttl;
-        tab.tabEl.querySelector('.tab-title').textContent = ttl;
-      }
     } catch(e) {}
-  }, 600);
+  }, 300);
 }
 
 /* ── FPS + RAM ── */
@@ -825,6 +824,7 @@ document.addEventListener('DOMContentLoaded', function () {
     if (tab) {
       tab.url = ''; tab.frameEl.src = 'about:blank';
       tab.tabEl.querySelector('.tab-title').textContent = '新しいタブ';
+      tab.isDisguised = false;
       document.getElementById('messageArea').style.display = 'flex';
       document.getElementById('urlInput').value = '';
     }
@@ -834,11 +834,6 @@ document.addEventListener('DOMContentLoaded', function () {
     var url = document.getElementById('urlInput').value.trim();
     if (url) loadUrlToTab(activeTabId, url);
   };
-  
-  // ★ リアルタイムURL反映（入力中も表示）
-  document.getElementById('urlInput').addEventListener('input', function(e) {
-    // 入力中の表示更新（実際のloadは不要）
-  });
   
   document.getElementById('urlInput').addEventListener('keydown', function (e) {
     if (e.key === 'Enter') document.getElementById('goButton').click();
