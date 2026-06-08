@@ -6,23 +6,10 @@ var tabIdCounter = 0;
 // 教育サイト・テンプレート拡充版
 var EDUCATION_TEMPLATES = {
   'Google Classroom': 'https://ssl.gstatic.com/images/branding/product/1x/classroom_64dp.png',
-  'Moodle': 'https://moodle.org/theme/moodle/pix/favicon.ico',
-  'Canvas': 'https://du11hjcvx0uqb.cloudfront.net/dist/images/favicon-48x48-7c872ceb39.png',
-  'Quizlet': 'https://quizlet.com/favicon.ico',
-  'Khan Academy': 'https://www.khanacademy.org/apple-touch-icon.png',
-  'Zoom': 'https://zoom.us/favicon.ico',
-  'Schoology': 'https://app.schoology.com/favicon.ico',
-  'Google Meet': 'https://www.gstatic.com/images/branding/product/1x/meet_64dp.png',
-  'Microsoft Teams': 'https://www.microsoft.com/favicon.ico',
-  'EdPuzzle': 'https://edpuzzle.com/favicon.ico',
   'Z会': 'https://www.zkai.co.jp/favicon.ico',
   'ベネッセ': 'https://www.benesse.co.jp/favicon.ico',
   'Google': 'https://www.google.com/favicon.ico',
-  'YouTube': 'https://www.youtube.com/favicon.ico',
   'Wikipedia': 'https://www.wikipedia.org/favicon.ico',
-  'Twitter': 'https://twitter.com/favicon.ico',
-  'Amazon': 'https://www.amazon.co.jp/favicon.ico',
-  'Microsoft': 'https://www.microsoft.com/favicon.ico'
 };
 
 // ★ URL自動判定（YouTube→「YouTube」など）
